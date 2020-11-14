@@ -167,8 +167,8 @@ impl Battlesnake {
         self.latency
     }
 
-    pub fn get_head(&self) -> &Coordinate {
-        &self.head
+    pub fn get_head(&self) -> Coordinate {
+        self.head
     }
 
     pub fn get_length(&self) -> i32 {
@@ -184,7 +184,8 @@ impl Battlesnake {
 
     pub fn eat_food(&mut self) {
         self.health = 100;
-        self.body.push_back(self.body.back().unwrap().clone())
+        self.body.push_back(self.body.back().unwrap().clone());
+        self.length += 1;
     }
 }
 
@@ -262,10 +263,6 @@ impl Board {
 
     pub fn get_snakes(&mut self) -> &mut Vec<Battlesnake> {
         &mut self.snakes
-    }
-
-    pub fn get_mut(&mut self) -> (i32, i32, &mut Vec<Coordinate>, &mut Vec<Coordinate>, &mut Vec<Battlesnake>) {
-        (self.width, self.height, &mut self.food, &mut self.hazards, &mut self.snakes)
     }
 }
 

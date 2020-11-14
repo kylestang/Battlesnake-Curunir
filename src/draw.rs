@@ -14,12 +14,24 @@ pub fn draw_board(board: &mut Board, name: String) {
     for x in 0..board.get_width() as u32 {
         for y in 0..board.get_height() as u32 {
 
-            let b: u8 = 255;
-            let g: u8 = 255;
-            let r: u8 = 255;
-
             for tile_x in 0..TILE_SIZE {
                 for tile_y in 0..TILE_SIZE {
+
+                    let mut r: u8;
+                    let mut g: u8;
+                    let mut b: u8;
+
+                    if (tile_x == 0 || tile_y == 0) {
+                        b = 100;
+                        g = 0;
+                        r = 0;
+                    }
+                    else {
+                        b = 255;
+                        g = 255;
+                        r = 255;
+                    }
+
                     let x_pixel= x * TILE_SIZE + tile_x;
                     let y_pixel = imgy - (y * TILE_SIZE + tile_y) - 1;
                     img.put_pixel(x_pixel, y_pixel, Rgb([r, g, b]));
@@ -53,11 +65,31 @@ fn draw_snake(img: &mut RgbImage, snake: &Battlesnake, width: i32, height: i32, 
     for tile in snake.get_body() {
         if !(tile.get_x() < 0 || tile.get_x() > width - 1
         || tile.get_y() < 0 || tile.get_y() > height - 1) {
-            for tile_x in 0..TILE_SIZE as i32 {
-                for tile_y in 0..TILE_SIZE as i32 {
-                    let x_pixel = tile.get_x() * TILE_SIZE as i32 + tile_x;
-                    let y_pixel = imgy - (tile.get_y() * TILE_SIZE as i32 + tile_y) - 1;
-                    img.put_pixel(x_pixel as u32, y_pixel as u32, Rgb([r, g, b]))
+
+            if *tile == snake.get_head() {
+                let eye_radius = TILE_SIZE as f32 / 5.0;
+
+                for tile_x in 1..TILE_SIZE as i32 {
+                    for tile_y in 1..TILE_SIZE as i32 {
+                        let radius = (((tile_x - TILE_SIZE as i32 / 2).pow(2) + (tile_y - TILE_SIZE as i32 / 2).pow(2)) as f32).sqrt();
+                        let x_pixel = tile.get_x() * TILE_SIZE as i32 + tile_x;
+                        let y_pixel = imgy - (tile.get_y() * TILE_SIZE as i32 + tile_y) - 1;
+                        if radius <= eye_radius {
+                            img.put_pixel(x_pixel as u32, y_pixel as u32, Rgb([255, 255, 255]));
+                        } else {
+                            img.put_pixel(x_pixel as u32, y_pixel as u32, Rgb([r, g, b]));
+                        }
+                    }
+                }
+
+            } else {
+            
+                for tile_x in 1..TILE_SIZE as i32 {
+                    for tile_y in 1..TILE_SIZE as i32 {
+                        let x_pixel = tile.get_x() * TILE_SIZE as i32 + tile_x;
+                        let y_pixel = imgy - (tile.get_y() * TILE_SIZE as i32 + tile_y) - 1;
+                        img.put_pixel(x_pixel as u32, y_pixel as u32, Rgb([r, g, b]));
+                    }
                 }
             }
         }
@@ -111,7 +143,7 @@ mod test_draw {
                     3
                 ),
                 Battlesnake::new(
-                    1,
+                    5,
                     16,
                     VecDeque::from(vec![
                         Coordinate::new(5, 4),

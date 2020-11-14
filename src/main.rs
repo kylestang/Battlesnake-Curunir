@@ -2,6 +2,7 @@ use actix_web::{get, post, web, App, HttpResponse, HttpServer};
 use structures::{MoveRequest, IndexResponse, Battlesnake, Board};
 use decision::decision;
 use std::collections::VecDeque;
+use constants::YOU_ID;
 
 mod structures;
 mod decision;
@@ -40,7 +41,7 @@ async fn game_move(data: web::Json<MoveRequest>) -> HttpResponse {
     for snake in input_board.get_snakes(){
         snakes.push(
             Battlesnake::new(
-                if snake.get_id() == data.get_you().get_id() {0} else {id},
+                if snake.get_id() == data.get_you().get_id() {YOU_ID} else {id},
                 snake.get_health(),
                 VecDeque::from(snake.get_body().clone()),
                 snake.get_latency().parse().unwrap(),
