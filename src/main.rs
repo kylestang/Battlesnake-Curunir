@@ -8,11 +8,9 @@ use std::collections::VecDeque;
 
 use crate::structures::*;
 
-//mod structures;
 mod decision;
 mod constants;
 mod functions;
-mod draw;
 mod structures;
 mod requests;
 
@@ -79,7 +77,8 @@ async fn game_move(data: web::Json<MoveRequest>) -> HttpResponse {
 
     let game = data.get_game().clone();
 
-    HttpResponse::Ok().json(decision(game, data.get_turn(), board, you))
+    //HttpResponse::Ok().json(decision(game, data.get_turn(), board, you))
+    HttpResponse::Ok().body("")
 }
 
 #[post("/end")]

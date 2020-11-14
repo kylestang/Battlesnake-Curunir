@@ -1,3 +1,4 @@
+/*
 use actix_web::test;
 use super::*;
 use structures::{Game, Ruleset, InputBoard, Coordinate, InputSnake};
@@ -90,3 +91,4 @@ async fn test_move_post() {
     println!("{}", resp.status());
     assert!(resp.status().is_success());
 }
+*/

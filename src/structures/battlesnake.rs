@@ -1,5 +1,6 @@
 use std::collections::VecDeque;
 
+use crate::board::Board;
 use crate::coordinate::Coordinate;
 
 #[derive(Clone, Debug, Eq)]
@@ -55,6 +56,25 @@ impl Battlesnake {
         self.health = 100;
         self.body.push_back(self.body.back().unwrap().clone());
         self.length += 1;
+    }
+
+    pub fn did_collide(&self, board: &Board) -> bool {
+        let x = self.head.get_x();
+        let y = self.head.get_y();
+
+        if x < 0 || x > board.get_width() - 1 || y < 0 || y > board.get_height() - 1 {
+            return true;
+        }
+
+        for snake in board.get_snakes() {
+            if snake.get_id() == self.id {
+                for tile in &self.body {
+
+                }
+            }
+        }
+
+        false
     }
 }
 

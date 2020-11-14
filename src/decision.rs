@@ -1,4 +1,7 @@
-use crate::structures::{Game, Battlesnake, Board, MoveResponse};
+use crate::structures::{battlesnake, board, game};
+use battlesnake::Battlesnake;
+use board::Board;
+use game::Game;
 use crate::constants::DIRECTIONS;
 use crate::functions::game_step;
 use crate::draw::draw_board;
