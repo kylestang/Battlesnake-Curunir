@@ -1,14 +1,20 @@
 use actix_web::{get, post, web, App, HttpResponse, HttpServer};
-use structures::{MoveRequest, IndexResponse, Battlesnake, Board};
-use decision::decision;
-use std::collections::VecDeque;
+use battlesnake::Battlesnake;
+use board::Board;
 use constants::YOU_ID;
+use decision::decision;
+use requests::{IndexResponse, MoveRequest};
+use std::collections::VecDeque;
 
-mod structures;
+use crate::structures::*;
+
+//mod structures;
 mod decision;
 mod constants;
 mod functions;
 mod draw;
+mod structures;
+mod requests;
 
 #[cfg(test)]
 mod tests;
