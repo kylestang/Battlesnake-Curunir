@@ -1,18 +1,16 @@
+use crate::requests::MoveResponse;
 use crate::structures::{battlesnake, board, game};
 use battlesnake::Battlesnake;
 use board::Board;
 use game::Game;
 use crate::constants::DIRECTIONS;
-use crate::functions::game_step;
-use crate::draw::draw_board;
 
 pub fn decision(game: &Game, turn: i32, mut board: Board, mut you: Battlesnake) -> MoveResponse {    
     
-    test2(&mut board, &mut you, 0, 1);
+    test3(&mut board, &mut you, 0, 2);
 
     MoveResponse::new(String::from("left"), String::from("Hi!"))
 }
-
 
 /*
     n = number of snakes
@@ -24,45 +22,8 @@ pub fn decision(game: &Game, turn: i32, mut board: Board, mut you: Battlesnake) 
 
 
 */
-fn test(board: &mut Board, you: &mut Battlesnake, level: i32, max_level: i32) -> bool {
-    if !board.get_snakes().contains(you) {
-        return false;
-    }
 
-    if level >= max_level {
-        return board.get_snakes().contains(you);
-    }
-
-    let num_snakes = board.get_snakes().len();
-
-    for count in 0..DIRECTIONS.pow(num_snakes as u32) {
-
-        let mut current_board = board.clone();
-        
-        draw_board(&mut current_board, String::from("test"));
-
-        for i in 0..num_snakes {
-            let snake = &mut current_board.get_snakes()[i];
-            let adjacent = snake.get_head().get_adjacent();
-
-            snake.move_to(adjacent[(count as usize / (DIRECTIONS.pow(i as u32))) % DIRECTIONS]);
-            draw_board(&mut current_board, String::from("test"));
-        }
-
-        game_step(&mut current_board);
-        draw_board(&mut current_board, String::from("test"));
-
-        if test(&mut current_board, you, level + 1, max_level) {
-            return true;
-        }
-
-    }
-
-    return false;
-
-}
-
-fn test2(board: &mut Board, you: &mut Battlesnake, level: i32, max_level: i32) -> bool {
+fn test3(board: &mut Board, you: &Battlesnake, level: i32, max_level: i32) -> bool {
     let num_snakes = board.get_snakes().len();
 
     if level >= max_level || num_snakes == 0 {
@@ -70,24 +31,21 @@ fn test2(board: &mut Board, you: &mut Battlesnake, level: i32, max_level: i32) -
     }
 
     for count in 0..DIRECTIONS.pow(num_snakes as u32) {
-
         let mut current_board = board.clone();
-        
-        draw_board(&mut current_board, String::from("test"));
+        current_board.draw(String::from("test"));
 
         for i in 0..num_snakes {
-            let snake = &mut current_board.get_snakes()[i];
-
+            let snake = &mut current_board.get_snakes_mut()[i];
             let adjacent = snake.get_head().get_adjacent();
 
             snake.move_to(adjacent[(count as usize / (DIRECTIONS.pow(i as u32))) % DIRECTIONS]);
-            draw_board(&mut current_board, String::from("test"));
+            current_board.draw(String::from("test"));
         }
 
-        game_step(&mut current_board);
-        draw_board(&mut current_board, String::from("test"));
+        current_board.game_step();
+        current_board.draw(String::from("test"));
 
-        test2(&mut current_board, you, level + 1, max_level);
+        test3(&mut current_board, you, level + 1, max_level);
     }
 
     false

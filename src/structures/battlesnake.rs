@@ -68,12 +68,17 @@ impl Battlesnake {
 
         for snake in board.get_snakes() {
             if snake.get_id() == self.id {
-                for tile in &self.body {
-
+                for i in 1..self.body.len() {
+                    if self.body[i] == self.head {
+                        return true;
+                    }
+                }
+            } else {
+                if snake.body.contains(&self.head) {
+                    return true;
                 }
             }
         }
-
         false
     }
 }

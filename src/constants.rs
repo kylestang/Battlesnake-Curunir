@@ -8,10 +8,3 @@ pub const TAIL: &'static str = "default";
 // Game constants
 pub const DIRECTIONS: usize = 4;
 pub const YOU_ID: i32 = 0;
-
-// Execution details
-pub const LOGGING: bool = false;
-pub const LOG_PATH: &'static str = "logs/";
-pub const DRAWING: bool = false;
-pub const DRAW_PATH: &'static str = "drawings/";
-pub const TILE_SIZE: u32 = 20;

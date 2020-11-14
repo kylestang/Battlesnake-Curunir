@@ -1,6 +1,11 @@
 use serde::{Deserialize, Serialize};
+use std::fs::{File, OpenOptions};
+use std::io::Write;
 
 use crate::ruleset::Ruleset;
+
+const LOGGING: bool = true;
+const LOG_PATH: &'static str = "logs/";
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Game {
@@ -14,7 +19,7 @@ impl Game {
         Game {id, ruleset, timeout}
     }
 
-    pub fn get_id(&self) -> &String {
+    pub fn _get_id(&self) -> &String {
         &self.id
     }
 
@@ -24,5 +29,19 @@ impl Game {
 
     pub fn _get_timeout(&self) -> i32 {
         self.timeout
+    }
+
+    pub fn log_data(&self, data: String) {
+        println!("{}", data);
+        if LOGGING{
+    
+            let mut file: File = OpenOptions::new()
+                .append(true)
+                .create(true)
+                .open(format!("{}{}.log", LOG_PATH, self.id))
+                .unwrap();
+            
+            file.write_all(data.as_bytes()).unwrap();
+        }
     }
 }

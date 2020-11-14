@@ -1,7 +1,11 @@
-/*
-use actix_web::test;
 use super::*;
-use structures::{Game, Ruleset, InputBoard, Coordinate, InputSnake};
+
+use actix_web::test;
+use coordinate::Coordinate;
+use game::Game;
+use requests::InputBoard;
+use requests::InputSnake;
+use ruleset::Ruleset;
 
 #[actix_rt::test]
 async fn test_index_get() {
@@ -91,4 +95,3 @@ async fn test_move_post() {
     println!("{}", resp.status());
     assert!(resp.status().is_success());
 }
-*/
