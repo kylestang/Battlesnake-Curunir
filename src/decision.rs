@@ -77,15 +77,10 @@ pub fn decision(game: &Game, turn: i32, board: Board, _you: Battlesnake) -> Move
         direction = String::from("left");
     }
 
-    game.log_data(format!( "       turn: {}\n
-                              direction: {}\n
-                             down turns: {}\n
-                               up turns: {}\n
-                            right turns: {}\n
-                             left turns: {}\n",
-                             turn, direction, down, up, right, left
-                        )
-    );
+    game.log_data(format!(
+    "      turn: {}\n  direction: {}\n down turns: {}\n   up turns: {}\nright turns: {}\n left turns: {}\n",
+    turn, direction, down, up, right, left
+    ));
 
     MoveResponse::new(direction, String::from("Hi!"))
 }

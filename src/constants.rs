@@ -8,7 +8,6 @@ pub const TAIL: &'static str = "default";
 // Game constants
 pub const DIRECTIONS: usize = 4;
 pub const YOU_ID: i32 = 0;
-pub const SEARCH_DEPTH: i32 = 4;
 
 // Log settings
 pub const LOGGING: bool = true;

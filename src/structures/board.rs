@@ -3,7 +3,7 @@ use std::convert::TryInto;
 use std::time::Instant;
 
 use crate::battlesnake::Battlesnake;
-use crate::constants::{DIRECTIONS, DRAWING, DRAW_PATH, EYE_RATIO, FOOD_RATIO, PUPIL_RATIO, SEARCH_DEPTH, TILE_SIZE, YOU_ID};
+use crate::constants::{DIRECTIONS, DRAWING, DRAW_PATH, EYE_RATIO, FOOD_RATIO, PUPIL_RATIO, TILE_SIZE, YOU_ID};
 use crate::coordinate::Coordinate;
 
 #[derive(Clone, Debug)]
@@ -190,9 +190,6 @@ impl Board {
                 new_board.get_snakes_mut()[0].move_to(*pos);
                 // Let other snakes move
                 let turns = new_board.minimax(level + 1, false, end_time);
-                if turns > SEARCH_DEPTH {
-                    return turns;
-                }
                 if turns > max {
                     max = turns;
                 }
@@ -206,7 +203,7 @@ impl Board {
 
             // Get number of snakes
             let num_snakes = self.snakes.len() as u32;
-            let mut min = SEARCH_DEPTH + 10;
+            let mut min = i32::MAX;
             // Iterate through all possible combinations of snake movements
             for count in 0..DIRECTIONS.pow(num_snakes - 1) {
                 let mut new_board = self.clone();
