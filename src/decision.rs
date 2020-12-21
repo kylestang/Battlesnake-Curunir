@@ -9,7 +9,7 @@ use std::thread::spawn;
 use std::time::{Duration, Instant};
 
 pub fn decision(game: &Game, turn: i32, board: Board, _you: Battlesnake) -> MoveResponse {
-    let duration_millis = game.get_timeout() as u64 * 4 / 5;
+    let duration_millis = game.get_timeout() as u64 - 50;
     let end_time = Instant::now() + Duration::from_millis(duration_millis);
 
     // Create a thread for down
@@ -78,7 +78,7 @@ pub fn decision(game: &Game, turn: i32, board: Board, _you: Battlesnake) -> Move
     }
 
     game.log_data(format!(
-    "      turn: {}\n  direction: {}\n down turns: {}\n   up turns: {}\nright turns: {}\n left turns: {}\n",
+    "       turn: {}\n  direction: {}\n down turns: {}\n   up turns: {}\nright turns: {}\n left turns: {}\n",
     turn, direction, down, up, right, left
     ));
 

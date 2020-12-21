@@ -234,6 +234,9 @@ impl Board {
                 if turns < min {
                     min = turns;
                 }
+                if Instant::now() > end_time {
+                    return min;
+                }
             }
             // Return minimum number of turns survived
             return min;
