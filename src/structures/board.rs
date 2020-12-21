@@ -2,14 +2,8 @@ use image::{Rgb, RgbImage};
 use std::convert::TryInto;
 
 use crate::battlesnake::Battlesnake;
+use crate::constants::{DIRECTIONS, DRAWING, DRAW_PATH, EYE_RATIO, FOOD_RATIO, PUPIL_RATIO, TILE_SIZE};
 use crate::coordinate::Coordinate;
-
-const EYE_RATIO: f32 = 5.0;
-const FOOD_RATIO: f32 = 2.5;
-const PUPIL_RATIO: f32 = 10.0;
-const TILE_SIZE: u32 = 20;
-
-const DRAW_PATH: &'static str = "drawings/";
 
 #[derive(Clone, Debug)]
 pub struct Board {
@@ -33,7 +27,7 @@ impl Board {
         self.width
     }
 
-    pub fn get_food(&mut self) -> &mut Vec<Coordinate> {
+    pub fn _get_food(&mut self) -> &mut Vec<Coordinate> {
         &mut self.food
     }
 
@@ -63,9 +57,9 @@ impl Board {
                 for tile_x in 0..TILE_SIZE {
                     for tile_y in 0..TILE_SIZE {
 
-                        let mut r: u8;
-                        let mut g: u8;
-                        let mut b: u8;
+                        let r: u8;
+                        let g: u8;
+                        let b: u8;
 
                         if tile_x == 0 || tile_y == 0 {
                             b = 100;
@@ -147,6 +141,102 @@ impl Board {
             }
         }
         img.save(format!("{}{}.png", DRAW_PATH, file_name)).unwrap();
+    }
+
+    pub fn test_down(&self, you_id: i32, max_level: i32) -> bool {
+        let mut new_board = self.clone();
+        new_board.snakes[0].move_to(self.snakes[0].get_down());
+        new_board.minimax(you_id, 0, max_level, false)
+    }
+
+    pub fn test_up(&self, you_id: i32, max_level: i32) -> bool {
+        let mut new_board = self.clone();
+        new_board.snakes[0].move_to(self.snakes[0].get_up());
+        new_board.minimax(you_id, 0, max_level, false)
+    }
+
+    pub fn test_right(&self, you_id: i32, max_level: i32) -> bool {
+        let mut new_board = self.clone();
+        new_board.snakes[0].move_to(self.snakes[0].get_right());
+        new_board.minimax(you_id, 0, max_level, false)
+    }
+
+    pub fn test_left(&self, you_id: i32, max_level: i32) -> bool {
+        let mut new_board = self.clone();
+        new_board.snakes[0].move_to(self.snakes[0].get_left());
+        new_board.minimax(you_id, 0, max_level, false)
+    }
+
+    // Recursive minimax to find score of position
+    fn minimax(&mut self, you_id: i32, level: i32, max_level: i32, my_turn: bool) -> bool {
+        
+        if DRAWING {
+            self.draw(String::from("test"));
+        }
+        
+        // If I'm dead, return false
+        if self.snakes.len() == 0 {
+            return false;
+        }
+
+        // If above max level, return true if I'm alive
+        if level > max_level {
+            return self.snakes[0].get_id() == you_id;
+        }
+
+        // My turn
+        if my_turn {
+            let you = &self.snakes[0];
+            // Try each direction
+            for pos in &you.get_head().get_adjacent() {
+                let mut new_board = self.clone();
+                new_board.get_snakes_mut()[0].move_to(*pos);
+                // Let other snakes move
+                if new_board.minimax(you_id, level + 1, max_level, false) {
+                    // If I survived, return true
+                    return true;
+                }
+            }
+            // If I died every time, return false
+            return false;
+        }
+    
+        // Other snakes
+        else {
+
+            // Get number of snakes
+            let num_snakes = self.snakes.len() as u32;
+            // Iterate through all possible combinations of snake movements
+            for count in 0..DIRECTIONS.pow(num_snakes - 1) {
+                let mut new_board = self.clone();
+                // Move each snake
+                for i in 0..num_snakes as usize - 1 {
+                    let snake = &mut new_board.get_snakes_mut()[i + 1];
+                    let adjacent = snake.get_head().get_adjacent();
+        
+                    snake.move_to(adjacent[(count / DIRECTIONS.pow(i as u32)) % DIRECTIONS]);
+                }
+
+                if DRAWING {
+                    new_board.draw(String::from("test"));
+                }
+
+                // Update board
+                new_board.game_step();
+
+                if DRAWING {
+                    new_board.draw(String::from("test"));
+                }
+
+                // Let me move
+                if !new_board.minimax(you_id, level + 1, max_level, true) {
+                    // If I died, return false
+                    return false;
+                }
+            }
+            // If I survived, return true
+            return true;
+        }
     }
 
     pub fn game_step(&mut self) {

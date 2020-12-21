@@ -23,11 +23,27 @@ impl Coordinate {
     // Down, up, right, left
     pub fn get_adjacent(&self) -> [Coordinate; DIRECTIONS] {
         [
-            Coordinate::new(self.x, self.y - 1),
-            Coordinate::new(self.x, self.y + 1),
-            Coordinate::new(self.x + 1, self.y),
-            Coordinate::new(self.x - 1, self.y)
+            self.get_down(),
+            self.get_up(),
+            self.get_right(),
+            self.get_left()
         ]
+    }
+
+    pub fn get_down(&self) -> Coordinate {
+        Coordinate::new(self.x, self.y - 1)
+    }
+
+    pub fn get_up(&self) -> Coordinate {
+        Coordinate::new(self.x, self.y + 1)
+    }
+
+    pub fn get_right(&self) -> Coordinate {
+        Coordinate::new(self.x + 1, self.y)
+    }
+
+    pub fn get_left(&self) -> Coordinate {
+        Coordinate::new(self.x - 1, self.y)
     }
 }
 

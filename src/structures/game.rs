@@ -2,10 +2,8 @@ use serde::{Deserialize, Serialize};
 use std::fs::{File, OpenOptions};
 use std::io::Write;
 
+use crate::constants::{LOGGING, LOG_PATH};
 use crate::ruleset::Ruleset;
-
-const LOGGING: bool = true;
-const LOG_PATH: &'static str = "logs/";
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Game {
@@ -34,6 +32,7 @@ impl Game {
     pub fn log_data(&self, data: String) {
         println!("{}", data);
         if LOGGING{
+            let data = data + "\n";
     
             let mut file: File = OpenOptions::new()
                 .append(true)

@@ -38,22 +38,36 @@ async fn game_move(data: web::Json<MoveRequest>) -> HttpResponse {
     println!("Move");
     
     let input_board = data.get_board();
-    let mut snakes = Vec::new();
+    let mut snakes = Vec::with_capacity(input_board.get_snakes().len());
+
+    let input_you = data.get_you();
+    let you = Battlesnake::new(
+        YOU_ID,
+        input_you.get_health(),
+        VecDeque::from(input_you.get_body().clone()),
+        input_you.get_latency().parse().unwrap(),
+        input_you.get_head(),
+        input_you.get_length()
+    );
+
+    snakes.push(you.clone());
 
     let mut id: i32 = 1;
     for snake in input_board.get_snakes(){
-        snakes.push(
-            Battlesnake::new(
-                if snake.get_id() == data.get_you().get_id() {YOU_ID} else {id},
-                snake.get_health(),
-                VecDeque::from(snake.get_body().clone()),
-                snake.get_latency().parse().unwrap(),
-                snake.get_head(),
-                snake.get_length()
-            )
-        );
+        if snake.get_id() != input_you.get_id() {
+            snakes.push(
+                Battlesnake::new(
+                    id,
+                    snake.get_health(),
+                    VecDeque::from(snake.get_body().clone()),
+                    snake.get_latency().parse().unwrap(),
+                    snake.get_head(),
+                    snake.get_length()
+                )
+            );
 
-        id += 1;
+            id += 1;
+        }
     }
 
     let board = Board::new(
@@ -62,16 +76,6 @@ async fn game_move(data: web::Json<MoveRequest>) -> HttpResponse {
         input_board.get_food().clone(),
         input_board.get_hazards().clone(),
         snakes
-    );
-
-    let input_you = data.get_you();
-    let you = Battlesnake::new(
-        0,
-        input_you.get_health(),
-        VecDeque::from(input_you.get_body().clone()),
-        input_you.get_latency().parse().unwrap(),
-        input_you.get_head(),
-        input_you.get_length()
     );
 
     let game = data.get_game().clone();

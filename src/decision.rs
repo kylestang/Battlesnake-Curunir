@@ -1,52 +1,33 @@
+use crate::constants::SEARCH_DEPTH;
 use crate::requests::MoveResponse;
 use crate::structures::{battlesnake, board, game};
 use battlesnake::Battlesnake;
 use board::Board;
 use game::Game;
-use crate::constants::DIRECTIONS;
 
-pub fn decision(game: &Game, turn: i32, mut board: Board, mut you: Battlesnake) -> MoveResponse {    
-    
-    test3(&mut board, &mut you, 0, 2);
+pub fn decision(game: &Game, turn: i32, board: Board, you: Battlesnake) -> MoveResponse {
 
-    MoveResponse::new(String::from("left"), String::from("Hi!"))
-}
+    let down = board.test_down(you.get_id(), SEARCH_DEPTH);
+    let up = board.test_up(you.get_id(), SEARCH_DEPTH);
+    let right = board.test_right(you.get_id(), SEARCH_DEPTH);
+    let left = board.test_left(you.get_id(), SEARCH_DEPTH);
 
-/*
-    n = number of snakes
-    # of possible moves is 4^n
-    store level: number of turns simulated
-    store count: number of iterations completed in level
-    
-    use integer division to find position of snakes: for last snake -> (count // 4 ^ 0) % 4, for first snake -> (count // 4 ^ n-1) % 4
+    let mut direction = String::from("up");
 
-
-*/
-
-fn test3(board: &mut Board, you: &Battlesnake, level: i32, max_level: i32) -> bool {
-    let num_snakes = board.get_snakes().len();
-
-    if level >= max_level || num_snakes == 0 {
-        return board.get_snakes().contains(you);
+    if down {
+        direction = String::from("down");
+    }
+    else if up {
+        direction = String::from("up");
+    }
+    else if right {
+        direction = String::from("right");
+    }
+    else if left {
+        direction = String::from("left");
     }
 
-    for count in 0..DIRECTIONS.pow(num_snakes as u32) {
-        let mut current_board = board.clone();
-        current_board.draw(String::from("test"));
+    game.log_data(format!("turn: {} direction: {}", turn, direction));
 
-        for i in 0..num_snakes {
-            let snake = &mut current_board.get_snakes_mut()[i];
-            let adjacent = snake.get_head().get_adjacent();
-
-            snake.move_to(adjacent[(count as usize / (DIRECTIONS.pow(i as u32))) % DIRECTIONS]);
-            current_board.draw(String::from("test"));
-        }
-
-        current_board.game_step();
-        current_board.draw(String::from("test"));
-
-        test3(&mut current_board, you, level + 1, max_level);
-    }
-
-    false
+    MoveResponse::new(direction, String::from("Hi!"))
 }

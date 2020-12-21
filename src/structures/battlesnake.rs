@@ -45,17 +45,20 @@ impl Battlesnake {
         self.length
     }
 
-    pub fn move_to(&mut self, pos: Coordinate) {
-        self.body.pop_back();
-        self.body.push_front(pos);
-        self.head = self.body[0];
-        self.health -= 1;
+    pub fn get_down(&self) -> Coordinate {
+        self.head.get_down()
     }
 
-    pub fn eat_food(&mut self) {
-        self.health = 100;
-        self.body.push_back(self.body.back().unwrap().clone());
-        self.length += 1;
+    pub fn get_up(&self) -> Coordinate {
+        self.head.get_up()
+    }
+
+    pub fn get_right(&self) -> Coordinate {
+        self.head.get_right()
+    }
+
+    pub fn get_left(&self) -> Coordinate {
+        self.head.get_left()
     }
 
     pub fn did_collide(&self, board: &Board) -> bool {
@@ -80,6 +83,19 @@ impl Battlesnake {
             }
         }
         false
+    }
+
+    pub fn eat_food(&mut self) {
+        self.health = 100;
+        self.body.push_back(self.body.back().unwrap().clone());
+        self.length += 1;
+    }
+
+    pub fn move_to(&mut self, pos: Coordinate) {
+        self.body.pop_back();
+        self.body.push_front(pos);
+        self.head = self.body[0];
+        self.health -= 1;
     }
 }
 

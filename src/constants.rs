@@ -8,3 +8,16 @@ pub const TAIL: &'static str = "default";
 // Game constants
 pub const DIRECTIONS: usize = 4;
 pub const YOU_ID: i32 = 0;
+pub const SEARCH_DEPTH: i32 = 5;
+
+// Log settings
+pub const LOGGING: bool = true;
+pub const LOG_PATH: &'static str = "logs/";
+
+// Drawing settings
+pub const DRAWING: bool = false;
+pub const DRAW_PATH: &'static str = "drawings/";
+pub const EYE_RATIO: f32 = 5.0;
+pub const FOOD_RATIO: f32 = 2.5;
+pub const PUPIL_RATIO: f32 = 10.0;
+pub const TILE_SIZE: u32 = 20;
