@@ -143,62 +143,58 @@ impl Board {
         img.save(format!("{}{}.png", DRAW_PATH, file_name)).unwrap();
     }
 
-    pub fn test_down(&self) -> bool {
+    pub fn test_down(&self) -> i32 {
         let mut new_board = self.clone();
         new_board.snakes[0].move_to(self.snakes[0].get_down());
         new_board.minimax(0, false)
     }
 
-    pub fn test_up(&self) -> bool {
+    pub fn test_up(&self) -> i32 {
         let mut new_board = self.clone();
         new_board.snakes[0].move_to(self.snakes[0].get_up());
         new_board.minimax(0, false)
     }
 
-    pub fn test_right(&self) -> bool {
+    pub fn test_right(&self) -> i32 {
         let mut new_board = self.clone();
         new_board.snakes[0].move_to(self.snakes[0].get_right());
         new_board.minimax(0, false)
     }
 
-    pub fn test_left(&self) -> bool {
+    pub fn test_left(&self) -> i32 {
         let mut new_board = self.clone();
         new_board.snakes[0].move_to(self.snakes[0].get_left());
         new_board.minimax(0, false)
     }
 
     // Recursive minimax to find score of position
-    fn minimax(&mut self, level: i32, my_turn: bool) -> bool {
+    fn minimax(&mut self, level: i32, my_turn: bool) -> i32 {
         
         if DRAWING {
             self.draw(String::from("test"));
         }
         
-        // If I'm dead, return false
-        if self.snakes.len() == 0 || self.snakes[0].get_id() != YOU_ID {
-            return false;
-        }
-
-        // If above max level, return true if I'm alive
-        if level > SEARCH_DEPTH {
-            return self.snakes[0].get_id() == YOU_ID;
+        // If I'm dead or above search depth, return current level
+        if self.snakes.len() == 0 || self.snakes[0].get_id() != YOU_ID || level > SEARCH_DEPTH {
+            return level;
         }
 
         // My turn
         if my_turn {
             let you = &self.snakes[0];
+            let mut max = -1;
             // Try each direction
             for pos in &you.get_head().get_adjacent() {
                 let mut new_board = self.clone();
                 new_board.get_snakes_mut()[0].move_to(*pos);
                 // Let other snakes move
-                if new_board.minimax(level + 1, false) {
-                    // If I survived, return true
-                    return true;
+                let turns = new_board.minimax(level + 1, false);
+                if turns > max {
+                    max = turns;
                 }
             }
-            // If I died every time, return false
-            return false;
+            // Return maximum number of turns survived
+            return max;
         }
     
         // Other snakes
@@ -206,6 +202,7 @@ impl Board {
 
             // Get number of snakes
             let num_snakes = self.snakes.len() as u32;
+            let mut min = SEARCH_DEPTH + 10;
             // Iterate through all possible combinations of snake movements
             for count in 0..DIRECTIONS.pow(num_snakes - 1) {
                 let mut new_board = self.clone();
@@ -229,13 +226,13 @@ impl Board {
                 }
 
                 // Let me move
-                if !new_board.minimax(level, true) {
-                    // If I died, return false
-                    return false;
+                let turns = new_board.minimax(level, true);
+                if turns < min {
+                    min = turns;
                 }
             }
-            // If I survived, return true
-            return true;
+            // Return minimum number of turns survived
+            return min;
         }
     }
 

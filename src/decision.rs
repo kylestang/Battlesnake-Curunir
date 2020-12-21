@@ -3,6 +3,7 @@ use crate::structures::{battlesnake, board, game};
 use battlesnake::Battlesnake;
 use board::Board;
 use game::Game;
+use std::cmp::max;
 use std::thread::spawn;
 use std::sync::mpsc;
 
@@ -59,19 +60,21 @@ pub fn decision(game: &Game, turn: i32, board: Board, _you: Battlesnake) -> Move
     let mut direction = String::from("up");
     let mut survival = false;
 
-    if down {
+    let max_turns = max(max(down, up), max(right, left));
+
+    if down == max_turns {
         direction = String::from("down");
         survival = true;
     }
-    else if up {
+    else if up == max_turns {
         direction = String::from("up");
         survival = true;
     }
-    else if right {
+    else if right == max_turns {
         direction = String::from("right");
         survival = true;
     }
-    else if left {
+    else if left == max_turns {
         direction = String::from("left");
         survival = true;
     }
