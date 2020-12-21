@@ -16,7 +16,7 @@ mod requests;
 #[cfg(test)]
 mod tests;
 
-#[get("/")]
+#[get("/battlesnake/curunir")]
 async fn index() -> HttpResponse {
     HttpResponse::Ok().json(IndexResponse::new(
         constants::API_VERSION,
@@ -27,13 +27,13 @@ async fn index() -> HttpResponse {
     ))
 }
 
-#[post("/start")]
+#[post("/battlesnake/curunir/start")]
 async fn start() -> HttpResponse {
     println!("Start");
     HttpResponse::Ok().body("")
 }
 
-#[post("/move")]
+#[post("/battlesnake/curunir/move")]
 async fn game_move(data: web::Json<MoveRequest>) -> HttpResponse {
     println!("Move");
     
@@ -83,7 +83,7 @@ async fn game_move(data: web::Json<MoveRequest>) -> HttpResponse {
     HttpResponse::Ok().json(decision(game, data.get_turn(), board, you))
 }
 
-#[post("/end")]
+#[post("/battlesnake/curunir/end")]
 async fn end() -> HttpResponse {
     println!("End");
     HttpResponse::Ok().body("")
@@ -98,7 +98,7 @@ async fn main() -> std::io::Result<()> {
             .service(game_move)
             .service(end)
     })
-    .bind("0.0.0.0:25580")?
+    .bind("0.0.0.0:25571")?
     .run()
     .await
 }

@@ -10,7 +10,7 @@ use ruleset::Ruleset;
 #[actix_rt::test]
 async fn test_index_get() {
     let mut app = test::init_service(App::new().service(index)).await;
-    let req = test::TestRequest::with_header("content-type", "text/plain").to_request();
+    let req = test::TestRequest::with_header("content-type", "text/plain").uri("/battlesnake/curunir").to_request();
     let resp = test::call_service(&mut app, req).await;
     println!("{}", resp.status());
     assert!(resp.status().is_success());
@@ -34,7 +34,8 @@ async fn test_move_post() {
             vec![
                 Coordinate::new(5, 5),
                 Coordinate::new(9, 0),
-                Coordinate::new(2, 6)
+                Coordinate::new(2, 6),
+                Coordinate::new(1, 1)
             ],
             vec![
                 Coordinate::new(0, 0)
@@ -43,7 +44,7 @@ async fn test_move_post() {
                 InputSnake::_new(
                     String::from("snake-508e96ac-94ad-11ea-bb37"),
                     String::from("My Snake"),
-                    54,
+                    3,
                     vec![
                         Coordinate::new(0, 0),
                         Coordinate::new(1, 0),
@@ -74,7 +75,7 @@ async fn test_move_post() {
         InputSnake::_new(
             String::from("snake-508e96ac-94ad-11ea-bb37"),
             String::from("My Snake"),
-            54,
+            3,
             vec![
                 Coordinate::new(0, 0),
                 Coordinate::new(1, 0),
@@ -89,7 +90,7 @@ async fn test_move_post() {
 
 
     let mut app = test::init_service(App::new().service(game_move)).await;
-    let req = test::TestRequest::post().set_json(&data).uri("/move").to_request();
+    let req = test::TestRequest::post().set_json(&data).uri("/battlesnake/curunir/move").to_request();
     println!("{}", req.path());
     let resp = test::call_service(&mut app, req).await;
     println!("{}", resp.status());

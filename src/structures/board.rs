@@ -2,7 +2,7 @@ use image::{Rgb, RgbImage};
 use std::convert::TryInto;
 
 use crate::battlesnake::Battlesnake;
-use crate::constants::{DIRECTIONS, DRAWING, DRAW_PATH, EYE_RATIO, FOOD_RATIO, PUPIL_RATIO, TILE_SIZE};
+use crate::constants::{DIRECTIONS, DRAWING, DRAW_PATH, EYE_RATIO, FOOD_RATIO, PUPIL_RATIO, SEARCH_DEPTH, TILE_SIZE, YOU_ID};
 use crate::coordinate::Coordinate;
 
 #[derive(Clone, Debug)]
@@ -143,45 +143,45 @@ impl Board {
         img.save(format!("{}{}.png", DRAW_PATH, file_name)).unwrap();
     }
 
-    pub fn test_down(&self, you_id: i32, max_level: i32) -> bool {
+    pub fn test_down(&self) -> bool {
         let mut new_board = self.clone();
         new_board.snakes[0].move_to(self.snakes[0].get_down());
-        new_board.minimax(you_id, 0, max_level, false)
+        new_board.minimax(0, false)
     }
 
-    pub fn test_up(&self, you_id: i32, max_level: i32) -> bool {
+    pub fn test_up(&self) -> bool {
         let mut new_board = self.clone();
         new_board.snakes[0].move_to(self.snakes[0].get_up());
-        new_board.minimax(you_id, 0, max_level, false)
+        new_board.minimax(0, false)
     }
 
-    pub fn test_right(&self, you_id: i32, max_level: i32) -> bool {
+    pub fn test_right(&self) -> bool {
         let mut new_board = self.clone();
         new_board.snakes[0].move_to(self.snakes[0].get_right());
-        new_board.minimax(you_id, 0, max_level, false)
+        new_board.minimax(0, false)
     }
 
-    pub fn test_left(&self, you_id: i32, max_level: i32) -> bool {
+    pub fn test_left(&self) -> bool {
         let mut new_board = self.clone();
         new_board.snakes[0].move_to(self.snakes[0].get_left());
-        new_board.minimax(you_id, 0, max_level, false)
+        new_board.minimax(0, false)
     }
 
     // Recursive minimax to find score of position
-    fn minimax(&mut self, you_id: i32, level: i32, max_level: i32, my_turn: bool) -> bool {
+    fn minimax(&mut self, level: i32, my_turn: bool) -> bool {
         
         if DRAWING {
             self.draw(String::from("test"));
         }
         
         // If I'm dead, return false
-        if self.snakes.len() == 0 {
+        if self.snakes.len() == 0 || self.snakes[0].get_id() != YOU_ID {
             return false;
         }
 
         // If above max level, return true if I'm alive
-        if level > max_level {
-            return self.snakes[0].get_id() == you_id;
+        if level > SEARCH_DEPTH {
+            return self.snakes[0].get_id() == YOU_ID;
         }
 
         // My turn
@@ -192,7 +192,7 @@ impl Board {
                 let mut new_board = self.clone();
                 new_board.get_snakes_mut()[0].move_to(*pos);
                 // Let other snakes move
-                if new_board.minimax(you_id, level + 1, max_level, false) {
+                if new_board.minimax(level + 1, false) {
                     // If I survived, return true
                     return true;
                 }
@@ -229,7 +229,7 @@ impl Board {
                 }
 
                 // Let me move
-                if !new_board.minimax(you_id, level + 1, max_level, true) {
+                if !new_board.minimax(level, true) {
                     // If I died, return false
                     return false;
                 }
