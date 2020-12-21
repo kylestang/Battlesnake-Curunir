@@ -45,7 +45,7 @@ async fn game_move(data: web::Json<MoveRequest>) -> HttpResponse {
         YOU_ID,
         input_you.get_health(),
         VecDeque::from(input_you.get_body().clone()),
-        input_you.get_latency().parse().unwrap(),
+        input_you.get_latency().parse().unwrap_or(0),
         input_you.get_head(),
         input_you.get_length()
     );
@@ -60,7 +60,7 @@ async fn game_move(data: web::Json<MoveRequest>) -> HttpResponse {
                     id,
                     snake.get_health(),
                     VecDeque::from(snake.get_body().clone()),
-                    snake.get_latency().parse().unwrap(),
+                    snake.get_latency().parse().unwrap_or(0),
                     snake.get_head(),
                     snake.get_length()
                 )

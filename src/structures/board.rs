@@ -189,6 +189,9 @@ impl Board {
                 new_board.get_snakes_mut()[0].move_to(*pos);
                 // Let other snakes move
                 let turns = new_board.minimax(level + 1, false);
+                if turns > SEARCH_DEPTH {
+                    return turns;
+                }
                 if turns > max {
                     max = turns;
                 }
@@ -227,6 +230,9 @@ impl Board {
 
                 // Let me move
                 let turns = new_board.minimax(level, true);
+                if turns == 0 {
+                    return turns;
+                }
                 if turns < min {
                     min = turns;
                 }
