@@ -4,16 +4,19 @@ use battlesnake::Battlesnake;
 use board::Board;
 use game::Game;
 use std::cmp::max;
-use std::thread::spawn;
 use std::sync::mpsc;
+use std::thread::spawn;
+use std::time::{Duration, Instant};
 
 pub fn decision(game: &Game, turn: i32, board: Board, _you: Battlesnake) -> MoveResponse {
+    let duration_millis = game.get_timeout() as u64 * 4 / 5;
+    let end_time = Instant::now() + Duration::from_millis(duration_millis);
 
     // Create a thread for down
     let down_board = board.clone();
     let (down_tx, down_rx) = mpsc::channel();
     let down_handle = spawn(move || {
-        let down = down_board.test_down();
+        let down = down_board.test_down(end_time);
         down_tx.send(down).unwrap();
     });
 
@@ -21,7 +24,7 @@ pub fn decision(game: &Game, turn: i32, board: Board, _you: Battlesnake) -> Move
     let up_board = board.clone();
     let (up_tx, up_rx) = mpsc::channel();
     let up_handle = spawn(move || {
-        let up = up_board.test_up();
+        let up = up_board.test_up(end_time);
         up_tx.send(up).unwrap();
     });
 
@@ -29,7 +32,7 @@ pub fn decision(game: &Game, turn: i32, board: Board, _you: Battlesnake) -> Move
     let right_board = board.clone();
     let (right_tx, right_rx) = mpsc::channel();
     let right_handle = spawn(move || {
-        let right = right_board.test_right();
+        let right = right_board.test_right(end_time);
         right_tx.send(right).unwrap();
     });
 
@@ -37,7 +40,7 @@ pub fn decision(game: &Game, turn: i32, board: Board, _you: Battlesnake) -> Move
     let left_board = board.clone();
     let (left_tx, left_rx) = mpsc::channel();
     let left_handle = spawn(move || {
-        let left = left_board.test_left();
+        let left = left_board.test_left(end_time);
         left_tx.send(left).unwrap();
     });
 
@@ -58,28 +61,31 @@ pub fn decision(game: &Game, turn: i32, board: Board, _you: Battlesnake) -> Move
     left_handle.join().unwrap();
 
     let mut direction = String::from("up");
-    let mut survival = false;
 
     let max_turns = max(max(down, up), max(right, left));
 
     if down == max_turns {
         direction = String::from("down");
-        survival = true;
     }
     else if up == max_turns {
         direction = String::from("up");
-        survival = true;
     }
     else if right == max_turns {
         direction = String::from("right");
-        survival = true;
     }
     else if left == max_turns {
         direction = String::from("left");
-        survival = true;
     }
 
-    game.log_data(format!("turn: {}\ndirection: {}\nsurvival: {}", turn, direction, survival));
+    game.log_data(format!( "       turn: {}\n
+                              direction: {}\n
+                             down turns: {}\n
+                               up turns: {}\n
+                            right turns: {}\n
+                             left turns: {}\n",
+                             turn, direction, down, up, right, left
+                        )
+    );
 
     MoveResponse::new(direction, String::from("Hi!"))
 }

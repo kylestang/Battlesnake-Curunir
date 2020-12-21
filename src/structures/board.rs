@@ -1,5 +1,6 @@
 use image::{Rgb, RgbImage};
 use std::convert::TryInto;
+use std::time::Instant;
 
 use crate::battlesnake::Battlesnake;
 use crate::constants::{DIRECTIONS, DRAWING, DRAW_PATH, EYE_RATIO, FOOD_RATIO, PUPIL_RATIO, SEARCH_DEPTH, TILE_SIZE, YOU_ID};
@@ -143,39 +144,39 @@ impl Board {
         img.save(format!("{}{}.png", DRAW_PATH, file_name)).unwrap();
     }
 
-    pub fn test_down(&self) -> i32 {
+    pub fn test_down(&self, end_time: Instant) -> i32 {
         let mut new_board = self.clone();
         new_board.snakes[0].move_to(self.snakes[0].get_down());
-        new_board.minimax(0, false)
+        new_board.minimax(0, false, end_time)
     }
 
-    pub fn test_up(&self) -> i32 {
+    pub fn test_up(&self, end_time: Instant) -> i32 {
         let mut new_board = self.clone();
         new_board.snakes[0].move_to(self.snakes[0].get_up());
-        new_board.minimax(0, false)
+        new_board.minimax(0, false, end_time)
     }
 
-    pub fn test_right(&self) -> i32 {
+    pub fn test_right(&self, end_time: Instant) -> i32 {
         let mut new_board = self.clone();
         new_board.snakes[0].move_to(self.snakes[0].get_right());
-        new_board.minimax(0, false)
+        new_board.minimax(0, false, end_time)
     }
 
-    pub fn test_left(&self) -> i32 {
+    pub fn test_left(&self, end_time: Instant) -> i32 {
         let mut new_board = self.clone();
         new_board.snakes[0].move_to(self.snakes[0].get_left());
-        new_board.minimax(0, false)
+        new_board.minimax(0, false, end_time)
     }
 
     // Recursive minimax to find score of position
-    fn minimax(&mut self, level: i32, my_turn: bool) -> i32 {
+    fn minimax(&mut self, level: i32, my_turn: bool, end_time: Instant) -> i32 {
         
         if DRAWING {
             self.draw(String::from("test"));
         }
         
-        // If I'm dead or above search depth, return current level
-        if self.snakes.len() == 0 || self.snakes[0].get_id() != YOU_ID || level > SEARCH_DEPTH {
+        // If I'm dead or time has run out, return current level
+        if self.snakes.len() == 0 || self.snakes[0].get_id() != YOU_ID || Instant::now() > end_time {
             return level;
         }
 
@@ -188,7 +189,7 @@ impl Board {
                 let mut new_board = self.clone();
                 new_board.get_snakes_mut()[0].move_to(*pos);
                 // Let other snakes move
-                let turns = new_board.minimax(level + 1, false);
+                let turns = new_board.minimax(level + 1, false, end_time);
                 if turns > SEARCH_DEPTH {
                     return turns;
                 }
@@ -229,7 +230,7 @@ impl Board {
                 }
 
                 // Let me move
-                let turns = new_board.minimax(level, true);
+                let turns = new_board.minimax(level, true, end_time);
                 if turns == 0 {
                     return turns;
                 }

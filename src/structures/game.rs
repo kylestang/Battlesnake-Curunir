@@ -25,15 +25,14 @@ impl Game {
         &self.ruleset
     }
 
-    pub fn _get_timeout(&self) -> i32 {
+    pub fn get_timeout(&self) -> i32 {
         self.timeout
     }
 
     pub fn log_data(&self, data: String) {
-        println!("{}", data);
-        if LOGGING{
-            let data = data + "\n";
-    
+        let data = data + "\n\n";
+        print!("{}", data);
+        if LOGGING{    
             let mut file: File = OpenOptions::new()
                 .append(true)
                 .create(true)
