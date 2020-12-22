@@ -1,6 +1,6 @@
 use image::{Rgb, RgbImage};
 use std::convert::TryInto;
-use std::time::Instant;
+use std::time::{Duration, Instant};
 
 use crate::battlesnake::Battlesnake;
 use crate::constants::{DIRECTIONS, DRAWING, DRAW_PATH, EYE_RATIO, FOOD_RATIO, PUPIL_RATIO, TILE_SIZE, YOU_ID};
@@ -205,7 +205,8 @@ impl Board {
             let num_snakes = self.snakes.len() as u32;
             let mut min = i32::MAX;
             // Iterate through all possible combinations of snake movements
-            for count in 0..DIRECTIONS.pow(num_snakes - 1) {
+            let possibilities = DIRECTIONS.pow(num_snakes - 1);
+            for count in 0..possibilities {
                 let mut new_board = self.clone();
                 // Move each snake
                 for i in 0..num_snakes as usize - 1 {
@@ -227,15 +228,14 @@ impl Board {
                 }
 
                 // Let me move
-                let turns = new_board.minimax(level, true, end_time);
+                let alloted_time = end_time.saturating_duration_since(Instant::now()).as_nanos() / possibilities as u128;
+                let duration = Duration::from_nanos(alloted_time as u64);
+                let turns = new_board.minimax(level, true, Instant::now() + duration);
                 if turns == 0 {
                     return turns;
                 }
                 if turns < min {
                     min = turns;
-                }
-                if Instant::now() > end_time {
-                    return min;
                 }
             }
             // Return minimum number of turns survived
