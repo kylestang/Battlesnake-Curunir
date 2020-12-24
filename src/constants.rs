@@ -1,7 +1,7 @@
 // Snake details
 pub const API_VERSION: &'static str = "1";
 pub const AUTHOR: &'static str = "Kyle Stang";
-pub const COLOR: &'static str = "#FFFFFF";
+pub const COLOR: &'static str = "#C6C6C6";
 pub const HEAD: &'static str = "evil";
 pub const TAIL: &'static str = "sharp";
 
