@@ -78,7 +78,7 @@ pub fn decision(game: &Game, turn: i32, board: Board, _you: Battlesnake) -> Move
     }
 
     game.log_data(format!(
-    "       turn: {}\n  direction: {}\n down turns: {}\n   up turns: {}\nright turns: {}\n left turns: {}\n",
+    "       turn: {}\n  direction: {}\n down turns: {:?}\n   up turns: {:?}\nright turns: {:?}\n left turns: {:?}\n",
     turn, direction, down, up, right, left
     ));
 

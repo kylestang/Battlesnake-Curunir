@@ -6,6 +6,7 @@ use std::time::{Duration, Instant};
 use crate::battlesnake::Battlesnake;
 use crate::constants::{DIRECTIONS, DRAWING, DRAW_PATH, EYE_RATIO, FOOD_RATIO, PUPIL_RATIO, TILE_SIZE, YOU_ID};
 use crate::coordinate::Coordinate;
+use crate::route::{DEFAULT_ROUTE, MAX_ROUTE, MIN_ROUTE, Route};
 
 #[derive(Clone, Debug)]
 pub struct Board {
@@ -145,60 +146,60 @@ impl Board {
         img.save(format!("{}{}.png", DRAW_PATH, file_name)).unwrap();
     }
 
-    pub fn test_down(&self, end_time: Instant) -> i32 {
+    pub fn test_down(&self, end_time: Instant) -> Route {
         let mut new_board = self.clone();
         new_board.snakes[0].move_to(self.snakes[0].get_down());
-        new_board.minimax(0, 0, i32::MAX, false, end_time)
+        new_board.minimax(DEFAULT_ROUTE.clone(), MIN_ROUTE, MAX_ROUTE, false, end_time)
     }
 
-    pub fn test_up(&self, end_time: Instant) -> i32 {
+    pub fn test_up(&self, end_time: Instant) -> Route {
         let mut new_board = self.clone();
         new_board.snakes[0].move_to(self.snakes[0].get_up());
-        new_board.minimax(0, 0, i32::MAX, false, end_time)
+        new_board.minimax(DEFAULT_ROUTE.clone(), MIN_ROUTE, MAX_ROUTE, false, end_time)
     }
 
-    pub fn test_right(&self, end_time: Instant) -> i32 {
+    pub fn test_right(&self, end_time: Instant) -> Route {
         let mut new_board = self.clone();
         new_board.snakes[0].move_to(self.snakes[0].get_right());
-        new_board.minimax(0, 0, i32::MAX, false, end_time)
+        new_board.minimax(DEFAULT_ROUTE.clone(), MIN_ROUTE, MAX_ROUTE, false, end_time)
     }
 
-    pub fn test_left(&self, end_time: Instant) -> i32 {
+    pub fn test_left(&self, end_time: Instant) -> Route {
         let mut new_board = self.clone();
         new_board.snakes[0].move_to(self.snakes[0].get_left());
-        new_board.minimax(0, 0, i32::MAX, false, end_time)
+        new_board.minimax(DEFAULT_ROUTE.clone(), MIN_ROUTE, MAX_ROUTE, false, end_time)
     }
 
     // Recursive minimax to find score of position
-    fn minimax(&mut self, level: i32, mut alpha: i32, mut beta: i32, my_turn: bool, end_time: Instant) -> i32 {
+    fn minimax(&mut self, current_route: Route, mut alpha: Route, mut beta: Route, my_turn: bool, end_time: Instant) -> Route {
         
         if DRAWING {
             self.draw(String::from("test"));
         }
         
         // If I'm dead or time has run out, return current level
-        if self.snakes.len() == 0 || self.snakes[0].get_id() != YOU_ID || Instant::now() > end_time {
-            return level;
+        if !current_route.get_survival() || Instant::now() > end_time {
+            return current_route;
         }
 
         // My turn
         if my_turn {
             let you = &self.snakes[0];
-            let mut max_turns = -1;
+            let mut best_route = MIN_ROUTE;
             // Try each direction
             for pos in &you.get_head().get_adjacent() {
                 let mut new_board = self.clone();
                 new_board.get_snakes_mut()[0].move_to(*pos);
                 // Let other snakes move
-                let turns = new_board.minimax(level + 1, alpha, beta, false, end_time);
-                max_turns = max(max_turns, turns);
-                alpha = max(alpha, max_turns);
+                let new_route = new_board.minimax(current_route, alpha, beta, false, end_time);
+                best_route = max(best_route, new_route);
+                alpha = max(alpha, best_route);
                 if alpha >= beta {
                     break;
                 }
             }
-            // Return maximum number of turns survived
-            return max_turns;
+            // Return best route found
+            return best_route;
         }
     
         // Other snakes
@@ -206,7 +207,7 @@ impl Board {
 
             // Get number of snakes
             let num_snakes = self.snakes.len() as u32;
-            let mut min_turns = i32::MAX;
+            let mut worst_route = MAX_ROUTE;
             // Iterate through all possible combinations of snake movements
             let possibilities = DIRECTIONS.pow(num_snakes - 1);
             for count in 0..possibilities {
@@ -224,7 +225,7 @@ impl Board {
                 }
 
                 // Update board
-                new_board.game_step();
+                let new_route = new_board.game_step(current_route.clone());
 
                 if DRAWING {
                     new_board.draw(String::from("test"));
@@ -233,25 +234,30 @@ impl Board {
                 // Let me move
                 let alloted_time = end_time.saturating_duration_since(Instant::now()).as_nanos() / (possibilities - count) as u128;
                 let duration = Duration::from_nanos(alloted_time as u64);
-                let turns = new_board.minimax(level, alpha, beta, true, Instant::now() + duration);
-                min_turns = min(min_turns, turns);
-                beta = min(beta, min_turns);
+                let turns = new_board.minimax(new_route, alpha, beta, true, Instant::now() + duration);
+                worst_route = min(worst_route, turns);
+                beta = min(beta, worst_route);
                 if beta <= alpha {
                     break;
                 }
             }
             // Return minimum number of turns survived
-            return min_turns;
+            return worst_route;
         }
     }
 
-    pub fn game_step(&mut self) {
+    pub fn game_step(&mut self, mut current_route: Route) -> Route {
         // Any Battlesnake that has found food will consume it
         for snake in &mut self.snakes {
             let mut i = 0;
             while i < self.food.len() {
                 if self.food[i] == snake.get_head() {
                     snake.eat_food();
+                    if snake.get_id() == YOU_ID {
+                        current_route.increment_my_food();
+                    } else {
+                        current_route.increment_opponent_food();
+                    }
                     self.food.remove(i);
                     continue;
                 }
@@ -271,11 +277,13 @@ impl Board {
         'snake_loop: while i < self.snakes.len() {
             if self.snakes[i].get_health() <= 0 {
                 self.snakes.remove(i);
+                current_route.increment_snakes_killed();
                 continue;
             }
 
             if self.snakes[i].did_collide(self){
                 self.snakes.remove(i);
+                current_route.increment_snakes_killed();
                 continue;
             }
 
@@ -286,13 +294,17 @@ impl Board {
                 if snakes[i].get_head() == snakes[j].get_head() {
                     if snakes[i].get_length() < snakes[j].get_length() {
                         snakes.remove(i);
+                        current_route.increment_snakes_killed();
                         continue 'snake_loop;
                     } else if snakes[i].get_length() > snakes[j].get_length() {
                         snakes.remove(j);
+                        current_route.increment_snakes_killed();
                         continue;
                     } else {
                         snakes.remove(j);
+                        current_route.increment_snakes_killed();
                         snakes.remove(i);
+                        current_route.increment_snakes_killed();
                         continue 'snake_loop;
                     }
                 }
@@ -300,6 +312,14 @@ impl Board {
             }
             i += 1;
         }
+        // Update current route
+        current_route.increment_turns();
+        if self.snakes.len() == 0 || self.snakes[0].get_id() != YOU_ID {
+            current_route.set_survival(false);
+        } else if self.snakes.len() == 1 {
+            current_route.set_solo(true);
+        }
+        return current_route;
     }
 }
 

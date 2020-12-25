@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use crate::constants::DIRECTIONS;
 
-#[derive(Clone, Copy, Debug, Deserialize, Eq, Serialize)]
+#[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
 pub struct Coordinate {
     x: i32,
     y: i32
@@ -44,11 +44,5 @@ impl Coordinate {
 
     pub fn get_left(&self) -> Coordinate {
         Coordinate::new(self.x - 1, self.y)
-    }
-}
-
-impl PartialEq for Coordinate {
-    fn eq(&self, other: &Self) -> bool {
-        self.x == other.x && self.y == other.y
     }
 }
