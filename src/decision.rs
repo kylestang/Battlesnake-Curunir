@@ -9,7 +9,8 @@ use std::thread::spawn;
 use std::time::{Duration, Instant};
 
 pub fn decision(game: &Game, turn: i32, board: Board, _you: Battlesnake) -> MoveResponse {
-    let duration_millis = game.get_timeout() as u64 - 50;
+    let duration_millis = 120000;
+    //let duration_millis = game.get_timeout() as u64 - 50;
     let end_time = Instant::now() + Duration::from_millis(duration_millis);
 
     // Create a thread for down

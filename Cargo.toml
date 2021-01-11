@@ -11,5 +11,6 @@ repository = "https://github.com/kylestang/battlesnake-curunir"
 [dependencies]
 actix-web = "3"
 actix-rt = "1.1.1"
-serde = "1.0.116"
-image = "0.23.10"
+image = "0.23.12"
+itertools = "0.10.0"
+serde = "1.0.118"

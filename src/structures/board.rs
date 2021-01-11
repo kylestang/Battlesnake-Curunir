@@ -1,10 +1,11 @@
 use image::{Rgb, RgbImage};
+use itertools::Itertools;
 use std::cmp::{max, min};
 use std::convert::TryInto;
 use std::time::{Duration, Instant};
 
 use crate::battlesnake::Battlesnake;
-use crate::constants::{DIRECTIONS, DRAWING, DRAW_PATH, EYE_RATIO, FOOD_RATIO, PUPIL_RATIO, TILE_SIZE, YOU_ID};
+use crate::constants::{DRAWING, DRAW_PATH, EYE_RATIO, FOOD_RATIO, PUPIL_RATIO, TILE_SIZE, YOU_ID};
 use crate::coordinate::Coordinate;
 use crate::route::{DEFAULT_ROUTE, MAX_ROUTE, MIN_ROUTE, Route};
 
@@ -187,9 +188,9 @@ impl Board {
             let you = &self.snakes[0];
             let mut best_route = MIN_ROUTE;
             // Try each direction
-            for pos in &you.get_head().get_adjacent() {
+            for pos in self.get_options(you) {
                 let mut new_board = self.clone();
-                new_board.get_snakes_mut()[0].move_to(*pos);
+                new_board.get_snakes_mut()[0].move_to(pos);
                 // Let other snakes move
                 let new_route = new_board.minimax(current_route, alpha, beta, false, end_time);
                 best_route = max(best_route, new_route);
@@ -209,15 +210,23 @@ impl Board {
             let num_snakes = self.snakes.len() as u32;
             let mut worst_route = MAX_ROUTE;
             // Iterate through all possible combinations of snake movements
-            let possibilities = DIRECTIONS.pow(num_snakes - 1);
-            for count in 0..possibilities {
+            let mut directions = Vec::with_capacity(num_snakes as usize);
+
+            let mut num_options = 1;
+            for snake in &self.snakes[1..] {
+                let options = self.get_options(snake);
+                num_options *= options.len();
+                directions.push(options);
+            }
+
+            let directions = directions.into_iter().multi_cartesian_product();
+
+            let mut count = 0;
+            for position in directions {
                 let mut new_board = self.clone();
                 // Move each snake
                 for i in 0..num_snakes as usize - 1 {
-                    let snake = &mut new_board.get_snakes_mut()[i + 1];
-                    let adjacent = snake.get_head().get_adjacent();
-        
-                    snake.move_to(adjacent[(count / DIRECTIONS.pow(i as u32)) % DIRECTIONS]);
+                    new_board.get_snakes_mut()[i + 1].move_to(position[i]);
                 }
 
                 if DRAWING {
@@ -232,7 +241,7 @@ impl Board {
                 }
 
                 // Let me move
-                let alloted_time = end_time.saturating_duration_since(Instant::now()).as_nanos() / (possibilities - count) as u128;
+                let alloted_time = end_time.saturating_duration_since(Instant::now()).as_nanos() / (num_options - count) as u128;
                 let duration = Duration::from_nanos(alloted_time as u64);
                 let turns = new_board.minimax(new_route, alpha, beta, true, Instant::now() + duration);
                 worst_route = min(worst_route, turns);
@@ -240,6 +249,8 @@ impl Board {
                 if beta <= alpha {
                     break;
                 }
+
+                count += 1;
             }
             // Return minimum number of turns survived
             return worst_route;
@@ -320,6 +331,35 @@ impl Board {
             current_route.set_solo(true);
         }
         return current_route;
+    }
+
+    pub fn get_options(&self, snake: &Battlesnake) -> Vec<Coordinate> {
+        let mut options = Vec::with_capacity(4);
+        for pos in &snake.get_head().get_adjacent() {
+            if !self.will_collide(*pos) {
+                options.push(*pos);
+            }
+        }
+        return options;
+    }
+
+    pub fn will_collide(&self, pos: Coordinate) -> bool {
+        let x = pos.get_x();
+        let y = pos.get_y();
+
+        if x < 0 || x >= self.width || y < 0 || y >= self.height {
+            return true;
+        }
+
+        for snake in &self.snakes {
+            for i in 0..snake.get_length() as usize - 1 {
+                if pos == snake.get_body()[i] {
+                    return true;
+                }
+            }
+        }
+
+        false
     }
 }
 
