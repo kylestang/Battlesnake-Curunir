@@ -1,19 +1,18 @@
 use actix_web::{get, post, web, App, HttpResponse, HttpServer};
-use structures::{MoveRequest, IndexResponse, Battlesnake, Board};
 use decision::decision;
-use std::collections::VecDeque;
-use constants::YOU_ID;
+use index_response::IndexResponse;
+use move_request::MoveRequest;
 
-mod structures;
-mod decision;
+use crate::requests::*;
+use crate::structures::*;
+
 mod constants;
-mod functions;
-mod draw;
+mod decision;
+mod requests;
+mod structures;
 
-#[cfg(test)]
-mod tests;
-
-#[get("/")]
+// Index response
+#[get("/battlesnake/curunir")]
 async fn index() -> HttpResponse {
     HttpResponse::Ok().json(IndexResponse::new(
         constants::API_VERSION,
@@ -24,64 +23,33 @@ async fn index() -> HttpResponse {
     ))
 }
 
-#[post("/start")]
+// Game start
+#[post("/battlesnake/curunir/start")]
 async fn start() -> HttpResponse {
     println!("Start");
     HttpResponse::Ok().body("")
 }
 
-#[post("/move")]
+// Game move response
+#[post("/battlesnake/curunir/move")]
 async fn game_move(data: web::Json<MoveRequest>) -> HttpResponse {
     println!("Move");
-    
-    let input_board = data.get_board();
-    let mut snakes = Vec::new();
-
-    let mut id: i32 = 1;
-    for snake in input_board.get_snakes(){
-        snakes.push(
-            Battlesnake::new(
-                if snake.get_id() == data.get_you().get_id() {YOU_ID} else {id},
-                snake.get_health(),
-                VecDeque::from(snake.get_body().clone()),
-                snake.get_latency().parse().unwrap(),
-                snake.get_head(),
-                snake.get_length()
-            )
-        );
-
-        id += 1;
-    }
-
-    let board = Board::new(
-        input_board.get_height(),
-        input_board.get_width(),
-        input_board.get_food().clone(),
-        input_board.get_hazards().clone(),
-        snakes
-    );
-
-    let input_you = data.get_you();
-    let you = Battlesnake::new(
-        0,
-        input_you.get_health(),
-        VecDeque::from(input_you.get_body().clone()),
-        input_you.get_latency().parse().unwrap(),
-        input_you.get_head(),
-        input_you.get_length()
-    );
-
-    let game = data.get_game().clone();
-
-    HttpResponse::Ok().json(decision(game, data.get_turn(), board, you))
+    // Get data from MoveRequest
+    let values = data.into_inner().into_values();
+    // Create Board from InputBoard
+    let board = values.2.into_board(values.3);
+    // Respond with direction
+    HttpResponse::Ok().json(decision(values.0, values.1, board))
 }
 
-#[post("/end")]
+// Game end
+#[post("/battlesnake/curunir/end")]
 async fn end() -> HttpResponse {
     println!("End");
     HttpResponse::Ok().body("")
 }
 
+// Start web server
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     HttpServer::new(|| {
@@ -91,7 +59,37 @@ async fn main() -> std::io::Result<()> {
             .service(game_move)
             .service(end)
     })
-    .bind("0.0.0.0:25580")?
+    .bind("0.0.0.0:25571")?
     .run()
     .await
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    use actix_web::test;
+
+    use crate::load_object;
+
+    #[actix_rt::test]
+    async fn test_index_get() {
+        let mut app = test::init_service(App::new().service(index)).await;
+        let req = test::TestRequest::with_header("content-type", "text/plain").uri("/battlesnake/curunir").to_request();
+        let resp = test::call_service(&mut app, req).await;
+        println!("{}", resp.status());
+        assert!(resp.status().is_success());
+    }
+
+    #[actix_rt::test]
+    async fn test_move_post() {
+        let data = load_object!(MoveRequest, "simple-01");
+
+        let mut app = test::init_service(App::new().service(game_move)).await;
+        let req = test::TestRequest::post().set_json(&data).uri("/battlesnake/curunir/move").to_request();
+        println!("{}", req.path());
+        let resp = test::call_service(&mut app, req).await;
+        println!("{}", resp.status());
+        assert!(resp.status().is_success());
+    }
 }

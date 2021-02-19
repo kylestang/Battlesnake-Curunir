@@ -1,15 +1,17 @@
 [package]
 name = "curunir"
-version = "0.1.0"
+version = "0.2.0"
 authors = ["Kyle Stang <kylestang.ks@gmail.com>"]
 edition = "2018"
 license = "MIT"
-repository = "https://github.com/kylestang/battlesnake-rust"
+repository = "https://github.com/kylestang/battlesnake-curunir"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
 actix-web = "3"
 actix-rt = "1.1.1"
-serde = "1.0.116"
-image = "0.23.10"
+image = "0.23.12"
+itertools = "0.10.0"
+serde = "1.0.123"
+serde_json = "1.0"

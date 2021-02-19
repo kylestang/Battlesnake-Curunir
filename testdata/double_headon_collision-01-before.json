@@ -1,0 +1,123 @@
+{
+    "game": {
+        "id": "220757",
+        "ruleset": {
+            "name": "standard",
+            "version": "v.1.2.3"
+        },
+        "timeout": 500
+    },
+    "turn": 200,
+    "you": {
+        "health": 100,
+        "id": "you",
+        "name": "#22aa34",
+        "body": [
+            {
+                "x": 4,
+                "y": 6
+            },
+            {
+                "x": 5,
+                "y": 6
+            },
+            {
+                "x": 6,
+                "y": 6
+            }
+        ],
+        "head": {
+            "x": 4,
+            "y": 6
+        },
+        "length": 3,
+        "latency": "222",
+        "shout": "Hi!"
+    },
+    "board": {
+        "food": [],
+        "height": 7,
+        "width": 7,
+        "snakes": [
+            {
+                "health": 100,
+                "id": "you",
+                "name": "#22aa34",
+                "body": [
+                    {
+                        "x": 4,
+                        "y": 6
+                    },
+                    {
+                        "x": 5,
+                        "y": 6
+                    },
+                    {
+                        "x": 6,
+                        "y": 6
+                    }
+                ],
+                "head": {
+                    "x": 4,
+                    "y": 6
+                },
+                "length": 3,
+                "latency": "222",
+                "shout": "Hi!"
+            },
+            {
+                "health": 100,
+                "id": "#FF5ed",
+                "name": "#FF5ed",
+                "body": [
+                    {
+                        "x": 2,
+                        "y": 3
+                    },
+                    {
+                        "x": 2,
+                        "y": 2
+                    },
+                    {
+                        "x": 2,
+                        "y": 1
+                    }
+                ],
+                "head": {
+                    "x": 2,
+                    "y": 3
+                },
+                "length": 3,
+                "latency": "222",
+                "shout": "Hi!"
+            },
+            {
+                "health": 100,
+                "id": "#FFef13",
+                "name": "#FFef13",
+                "body": [
+                    {
+                        "x": 2,
+                        "y": 3
+                    },
+                    {
+                        "x": 3,
+                        "y": 3
+                    },
+                    {
+                        "x": 4,
+                        "y": 3
+                    }
+                ],
+                "head": {
+                    "x": 2,
+                    "y": 3
+                },
+                "length": 3,
+                "latency": "222",
+                "shout": "Hi!"
+            }
+        ],
+        "hazards": []
+    }
+}
