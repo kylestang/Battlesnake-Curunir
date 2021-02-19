@@ -1,15 +1,12 @@
-use image::{Rgb, RgbImage};
-use itertools::Itertools;
-use std::cmp::{max, min};
+use image::{ImageResult, Rgb, RgbImage};
 use std::convert::TryInto;
 use std::time::{Duration, Instant};
 
 use crate::battlesnake::Battlesnake;
-use crate::constants::{DRAWING, DRAW_PATH, EYE_RATIO, FOOD_RATIO, PUPIL_RATIO, TILE_SIZE, YOU_ID};
+use crate::constants::{DIRECTIONS, DRAWING, DRAW_PATH, EYE_RATIO, FOOD_RATIO, PUPIL_RATIO, TILE_SIZE, YOU_ID};
 use crate::coordinate::Coordinate;
-use crate::route::{DEFAULT_ROUTE, MAX_ROUTE, MIN_ROUTE, Route};
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Board {
     height: i32,
     width: i32,
@@ -23,11 +20,11 @@ impl Board {
         Board {height, width, food, hazards, snakes}
     }
 
-    pub fn get_height(&self) -> i32 {
+    pub fn _get_height(&self) -> i32 {
         self.height
     }
 
-    pub fn get_width(&self) -> i32 {
+    pub fn _get_width(&self) -> i32 {
         self.width
     }
 
@@ -47,7 +44,64 @@ impl Board {
         &mut self.snakes
     }
 
-    pub fn draw(&self, file_name: String) {
+    // Return true if self is better than other
+    fn better_than(&self, other: &Option<Board>, snake_id: i32) -> bool {
+        // Return true if other is None
+        // Fix, see minimax selection of best, worst
+        if other.is_none() {
+            return false;
+        }
+
+        let other = other.as_ref().unwrap();
+
+        let self_snake = self.get_snake(snake_id);
+        let other_snake = other.get_snake(snake_id);
+
+        // Board where self is alive is better
+        if self_snake.is_some() && other_snake.is_none() {
+            return true;
+        } else if self_snake.is_none() && other_snake.is_some() {
+            return false;
+        }
+
+        // Board where enemy snakes are dead is better
+        let self_snakes = self.snakes.len();
+        let other_snakes = other.snakes.len();
+        if self_snakes < other_snakes {
+            return true;
+        } else if self_snakes > other_snakes {
+            return false;
+        }
+
+        // If both snakes are alive
+        if self_snake.is_some() && other_snake.is_some() {
+            let self_snake = self_snake.unwrap();
+            let other_snake = other_snake.unwrap();
+            
+            // Board where self is longer is better
+            let self_length = self_snake.get_length();
+            let other_length = other_snake.get_length();
+            if self_length > other_length {
+                return true;
+            } else if self_length < other_length {
+                return false;
+            }
+
+            // Board where self is closer to food is better
+            let self_closest_food = self.find_closest_food(self_snake.get_head());
+            let other_closest_food = other.find_closest_food(other_snake.get_head());
+            if self_closest_food < other_closest_food {
+                return true;
+            } else if self_closest_food > other_closest_food {
+                return false;
+            }
+        }
+
+        // Default return true
+        true
+    }
+
+    pub fn draw(&self, file_name: String) -> ImageResult<()> {
 
         let imgx = TILE_SIZE * self.width as u32;
         let imgy = TILE_SIZE * self.height as u32;
@@ -144,134 +198,101 @@ impl Board {
                 }
             }
         }
-        img.save(format!("{}{}.png", DRAW_PATH, file_name)).unwrap();
+        img.save(format!("{}{}.png", DRAW_PATH, file_name))
     }
 
-    pub fn test_down(&self, end_time: Instant) -> Route {
-        let mut new_board = self.clone();
-        new_board.snakes[0].move_to(self.snakes[0].get_down());
-        new_board.minimax(DEFAULT_ROUTE.clone(), MIN_ROUTE, MAX_ROUTE, false, end_time)
+    // Returns the distance to the closest food to pos
+    fn find_closest_food(&self, pos: Coordinate) -> Option<i32> {
+        if self.food.len() > 0 {
+            let mut closest_distance = (self.food[0].get_x() - pos.get_x()).abs() + (self.food[0].get_y() - pos.get_y()).abs();
+            for i in 1..self.food.len() {
+                let current_distance = (self.food[i].get_x() - pos.get_x()).abs() + (self.food[i].get_y() - pos.get_y()).abs();
+                if current_distance < closest_distance {
+                    closest_distance = current_distance;
+                }
+            }
+            return Some(closest_distance);
+        } else {
+            None
+        }
     }
 
-    pub fn test_up(&self, end_time: Instant) -> Route {
-        let mut new_board = self.clone();
-        new_board.snakes[0].move_to(self.snakes[0].get_up());
-        new_board.minimax(DEFAULT_ROUTE.clone(), MIN_ROUTE, MAX_ROUTE, false, end_time)
-    }
-
-    pub fn test_right(&self, end_time: Instant) -> Route {
-        let mut new_board = self.clone();
-        new_board.snakes[0].move_to(self.snakes[0].get_right());
-        new_board.minimax(DEFAULT_ROUTE.clone(), MIN_ROUTE, MAX_ROUTE, false, end_time)
-    }
-
-    pub fn test_left(&self, end_time: Instant) -> Route {
-        let mut new_board = self.clone();
-        new_board.snakes[0].move_to(self.snakes[0].get_left());
-        new_board.minimax(DEFAULT_ROUTE.clone(), MIN_ROUTE, MAX_ROUTE, false, end_time)
+    // Returns the snake with id snake_id, or None
+    pub fn get_snake(&self, snake_id: i32) -> Option<&Battlesnake> {
+        for snake in &self.snakes {
+            if snake.get_id() == snake_id {
+                return Some(snake);
+            }
+        }
+        None
     }
 
     // Recursive minimax to find score of position
-    fn minimax(&mut self, current_route: Route, mut alpha: Route, mut beta: Route, my_turn: bool, end_time: Instant) -> Route {
-        
-        if DRAWING {
-            self.draw(String::from("test"));
-        }
-        
-        // If I'm dead or time has run out, return current level
-        if !current_route.get_survival() || Instant::now() > end_time {
-            return current_route;
+    pub fn minimax(&mut self, current_level: i32, max_level: i32) -> &Board {
+        // End case. Return is self is dead or current_level >= max_level
+        if current_level >= max_level || self.snakes.len() <= 0 || self.snakes[0].get_id() != YOU_ID {
+            return self;
         }
 
-        // My turn
-        if my_turn {
-            let you = &self.snakes[0];
-            let mut best_route = MIN_ROUTE;
-            // Try each direction
-            for pos in self.get_options(you) {
-                let mut new_board = self.clone();
-                new_board.get_snakes_mut()[0].move_to(pos);
-                // Let other snakes move
-                let new_route = new_board.minimax(current_route, alpha, beta, false, end_time);
-                best_route = max(best_route, new_route);
-                alpha = max(alpha, best_route);
-                if alpha >= beta {
-                    break;
-                }
-            }
-            // Return best route found
-            return best_route;
-        }
-    
-        // Other snakes
-        else {
+        let num_snakes = self.snakes.len();
+        let mut worst_outcomes: Vec<[Option<Board>; 4]> = vec![[None, None, None, None]; num_snakes];
+        let mut best_worst_outcomes = vec![0; num_snakes];
 
-            // Get number of snakes
-            let num_snakes = self.snakes.len() as u32;
-            let mut worst_route = MAX_ROUTE;
-            // Iterate through all possible combinations of snake movements
-            let mut directions = Vec::with_capacity(num_snakes as usize);
-
-            let mut num_options = 1;
-            for snake in &self.snakes[1..] {
-                let options = self.get_options(snake);
-                num_options *= options.len();
-                directions.push(options);
+        // Iterate through all possible boards
+        for i in 0..DIRECTIONS.pow(num_snakes as u32) {
+            // Create new Board to modify
+            let mut new_board = self.clone();
+            // Move each snake to new position on new Board
+            for j in 0..num_snakes {
+                let snake = &mut new_board.get_snakes_mut()[j];
+                let pos = snake.get_head().get_adjacent()[(i / DIRECTIONS.pow(j as u32)) % 4];
+                snake.move_to(pos);
             }
 
-            let directions = directions.into_iter().multi_cartesian_product();
+            new_board.game_step();
 
-            let mut count = 0;
-            for position in directions {
-                let mut new_board = self.clone();
-                // Move each snake
-                for i in 0..num_snakes as usize - 1 {
-                    new_board.get_snakes_mut()[i + 1].move_to(position[i]);
+            // Get the maximin result from this position
+            let current_board = new_board.minimax(current_level + 1, max_level);
+
+            // Update worst outcomes
+            for j in 0..num_snakes {
+                let direction = (i / DIRECTIONS.pow(j as u32)) % 4;
+                // If new_board is worse than current worst, replace current worst with new_board
+                if !current_board.better_than(&worst_outcomes[j][direction], self.snakes[j].get_id()) {
+                    worst_outcomes[j][direction] = Some(current_board.clone());
+                    if current_board.better_than(&worst_outcomes[j][best_worst_outcomes[j]], self.snakes[j].get_id()) {
+                        best_worst_outcomes[j] = direction;
+                    }
                 }
-
-                if DRAWING {
-                    new_board.draw(String::from("test"));
-                }
-
-                // Update board
-                let new_route = new_board.game_step(current_route.clone());
-
-                if DRAWING {
-                    new_board.draw(String::from("test"));
-                }
-
-                // Let me move
-                let alloted_time = end_time.saturating_duration_since(Instant::now()).as_nanos() / (num_options - count) as u128;
-                let duration = Duration::from_nanos(alloted_time as u64);
-                let turns = new_board.minimax(new_route, alpha, beta, true, Instant::now() + duration);
-                worst_route = min(worst_route, turns);
-                beta = min(beta, worst_route);
-                if beta <= alpha {
-                    break;
-                }
-
-                count += 1;
             }
-            // Return minimum number of turns survived
-            return worst_route;
         }
+
+        for i in 0..num_snakes {
+            let snake = &mut self.snakes[i];
+            snake.move_to(snake.get_head().get_adjacent()[best_worst_outcomes[i]]);
+        }
+
+        self
     }
 
-    pub fn game_step(&mut self, mut current_route: Route) -> Route {
-        // Any Battlesnake that has found food will consume it
-        for snake in &mut self.snakes {
-            let mut i = 0;
-            while i < self.food.len() {
-                if self.food[i] == snake.get_head() {
+    fn game_step(&mut self) {
+        // Check all food
+        let mut i = 0;
+        while i < self.food.len() {
+            let mut food_eaten = false;
+
+            // Check all snakes
+            for snake in &mut self.snakes {
+                if snake.get_head() == self.food[i] {
+                    food_eaten = true;
                     snake.eat_food();
-                    if snake.get_id() == YOU_ID {
-                        current_route.increment_my_food();
-                    } else {
-                        current_route.increment_opponent_food();
-                    }
-                    self.food.remove(i);
-                    continue;
                 }
+            }
+
+            // Remove food if eaten
+            if food_eaten {
+                self.food.remove(i);
+            } else {
                 i += 1;
             }
         }
@@ -284,135 +305,270 @@ impl Board {
             Collided with another Battlesnake
             Collided head-to-head and lost
         */
+
+        // Eliminate snakes that are out of health or out of bounds
         let mut i = 0;
-        'snake_loop: while i < self.snakes.len() {
-            if self.snakes[i].get_health() <= 0 {
+        while i < self.snakes.len() {
+            let snake = &self.snakes[i];
+            let x = snake.get_head().get_x();
+            let y = snake.get_head().get_y();
+
+            if snake.get_health() <= 0 || (x < 0 || x > self.width - 1 || y < 0 || y > self.height - 1) {
                 self.snakes.remove(i);
-                current_route.increment_snakes_killed();
-                continue;
-            }
-
-            if self.snakes[i].did_collide(self){
-                self.snakes.remove(i);
-                current_route.increment_snakes_killed();
-                continue;
-            }
-
-            let snakes = &mut self.snakes;
-
-            let mut j = i + 1;
-            while j < snakes.len() {
-                if snakes[i].get_head() == snakes[j].get_head() {
-                    if snakes[i].get_length() < snakes[j].get_length() {
-                        snakes.remove(i);
-                        current_route.increment_snakes_killed();
-                        continue 'snake_loop;
-                    } else if snakes[i].get_length() > snakes[j].get_length() {
-                        snakes.remove(j);
-                        current_route.increment_snakes_killed();
-                        continue;
-                    } else {
-                        snakes.remove(j);
-                        current_route.increment_snakes_killed();
-                        snakes.remove(i);
-                        current_route.increment_snakes_killed();
-                        continue 'snake_loop;
-                    }
-                }
-                j += 1;
-            }
-            i += 1;
-        }
-        // Update current route
-        current_route.increment_turns();
-        if self.snakes.len() == 0 || self.snakes[0].get_id() != YOU_ID {
-            current_route.set_survival(false);
-        } else if self.snakes.len() == 1 {
-            current_route.set_solo(true);
-        }
-        return current_route;
-    }
-
-    pub fn get_options(&self, snake: &Battlesnake) -> Vec<Coordinate> {
-        let mut options = Vec::with_capacity(4);
-        for pos in &snake.get_head().get_adjacent() {
-            if !self.will_collide(*pos) {
-                options.push(*pos);
+            } else {
+                i += 1;
             }
         }
-        return options;
-    }
 
-    pub fn will_collide(&self, pos: Coordinate) -> bool {
-        let x = pos.get_x();
-        let y = pos.get_y();
-
-        if x < 0 || x >= self.width || y < 0 || y >= self.height {
-            return true;
-        }
-
+        // TODO break out of outer loop if snake has been eliminated
+        // Check for collisions
+        let mut to_remove = Vec::with_capacity(self.snakes.len());
         for snake in &self.snakes {
-            for i in 0..snake.get_length() as usize - 1 {
-                if pos == snake.get_body()[i] {
-                    return true;
+            for other_snake in &self.snakes {
+                if snake.lost_headon(other_snake) || snake.body_collision_with(other_snake) {
+                    to_remove.push(snake.get_id());
                 }
             }
         }
 
-        false
+        // Eliminate collided snakes
+        for snake_id in to_remove {
+            let mut i = 0;
+            while i < self.snakes.len() {
+                if self.snakes[i].get_id() == snake_id {
+                    self.snakes.remove(i);
+                    break;
+                } else {
+                    i += 1;
+                }
+            }
+        }
     }
 }
 
+#[macro_export]
+macro_rules! load_object {
+    (Board, $filename:expr) => {
+        {
+            let file: std::fs::File = std::fs::OpenOptions::new()
+                .read(true).open(format!("{}{}.json", crate::constants::TEST_PATH, $filename)).unwrap();
+            let board: crate::move_request::MoveRequest = serde_json::from_reader(file).unwrap();
+            let board = board.into_values();
+            let board = board.2.into_board(board.3);
+            board
+        }
+    };
+    (Battlesnake, $filename:expr) => {
+        {
+            let file: std::fs::File =std::fs::OpenOptions::new()
+                .read(true).open(format!("{}{}.json", crate::constants::TEST_PATH, $filename)).unwrap();
+            let snake: crate::input_snake::InputSnake = from_reader(file).unwrap();
+            let snake = snake.into_battlesnake();
+            snake
+        }
+    };
+    ($type:ident, $filename:expr) => {
+        {
+            let file: std::fs::File = std::fs::OpenOptions::new()
+                .read(true).open(format!("{}{}.json", crate::constants::TEST_PATH, $filename)).unwrap();
+            let object: $type = serde_json::from_reader(file).unwrap();
+            object
+        }
+    };
+}
+
 #[cfg(test)]
-mod test_draw {
-    use super::*;
-    use std::collections::VecDeque;
+mod tests {
+    // better_than()
+    #[test]
+    fn test_better_than_alive() {
+        let better_board = load_object!(Board, "better_than_alive-01-dead");
+        let worse_board = load_object!(Board, "better_than_alive-01-alive");
+
+        let true_result = better_board.better_than(&Some(worse_board.clone()), 0);
+        let false_result = worse_board.better_than(&Some(better_board), 0);
+        
+        assert_eq!(true_result && !false_result, true);
+    }
 
     #[test]
-    fn test_basic(){
-        let board = Board::new(
-            11,
-            11,
-            vec![
-                Coordinate::new(5, 5),
-                Coordinate::new(9, 0),
-                Coordinate::new(2, 6),
-                Coordinate::new(5, 4)
-            ],
-            vec![
-                Coordinate::new(0, 0)
-            ],
-            vec![
-                Battlesnake::new(
-                    0,
-                    54,
-                    VecDeque::from(vec![
-                        Coordinate::new(0, 0),
-                        Coordinate::new(1, 0),
-                        Coordinate::new(2, 0)
-                    ]),
-                    111,
-                    Coordinate::new(0, 0),
-                    3
-                ),
-                Battlesnake::new(
-                    1,
-                    16,
-                    VecDeque::from(vec![
-                        Coordinate::new(5, 4),
-                        Coordinate::new(5, 3),
-                        Coordinate::new(6, 3),
-                        Coordinate::new(6, 2)
-                    ]),
-                    222,
-                    Coordinate::new(5, 4),
-                    4,
-                )
-            ]
-        );
+    fn test_better_than_dead() {
+        let better_board = load_object!(Board, "better_than_dead-01-alive");
+        let worse_board = load_object!(Board, "better_than_dead-01-dead");
 
-        board.draw(String::from("hello"));
+        let true_result = better_board.better_than(&Some(worse_board.clone()), 1);
+        let false_result = worse_board.better_than(&Some(better_board), 1);
         
-        assert!(true);
+        assert_eq!(true_result && !false_result, true);
+    }
+
+    #[test]
+    fn test_better_than_food() {
+        let better_board = load_object!(Board, "better_than_food-01-close");
+        let worse_board = load_object!(Board, "better_than_food-01-far");
+
+        let true_result = better_board.better_than(&Some(worse_board.clone()), 0);
+        let false_result = worse_board.better_than(&Some(better_board), 0);
+
+        assert_eq!(true_result && !false_result, true);
+    }
+
+    #[test]
+    fn test_better_than_long() {
+        let better_board = load_object!(Board, "better_than_long-01-long");
+        let worse_board = load_object!(Board, "better_than_long-01-short");
+
+        let true_result = better_board.better_than(&Some(worse_board.clone()), 0);
+        let false_result = worse_board.better_than(&Some(better_board), 0);
+
+        assert_eq!(true_result && !false_result, true);
+    }
+
+    #[test]
+    fn test_better_than_none() {
+        let board = load_object!(Board, "better_than_none-01");
+
+        let result = board.better_than(&None, 0);
+
+        assert_eq!(result, true);
+    }
+    
+    // draw()
+    #[test]
+    fn test_draw() {
+        let board = load_object!(Board, "better_than_food-01-close");
+
+        let result = board.draw(String::from("better_than_food-01-close"));
+        
+        assert_eq!(result.is_ok(), true);
+    }
+
+    // find_closest_food
+    #[test]
+    fn test_find_closest_food_none() {
+        let board = load_object!(Board, "find_closest_food_none-01");
+
+        let food = board.find_closest_food(board.get_snakes()[0].get_head());
+
+        assert_eq!(food.is_none(), true);
+    }
+
+    #[test]
+    fn test_find_closest_food_one() {
+        let board = load_object!(Board, "find_closest_food_one-01");
+
+        let food = board.find_closest_food(board.get_snakes()[0].get_head());
+
+        assert_eq!(food.unwrap(), 4);
+    }
+
+    #[test]
+    fn test_find_closest_food_two() {
+        let board = load_object!(Board, "find_closest_food_two-01");
+
+        let food = board.find_closest_food(board.get_snakes()[0].get_head());
+
+        assert_eq!(food.unwrap(), 3);
+    }
+
+    // game_step()
+    #[test]
+    fn test_body_collision() {
+        let mut before_collision = load_object!(Board, "body_collision-01-before");
+        let after_collision = load_object!(Board, "body_collision-01-after");
+
+        before_collision.game_step();
+
+        assert_eq!(before_collision, after_collision);
+    }
+
+    #[test]
+    fn test_double_headon_collision() {
+        let mut before_collision = load_object!(Board, "double_headon_collision-01-before");
+        let after_collision = load_object!(Board, "double_headon_collision-01-after");
+
+        before_collision.game_step();
+
+        assert_eq!(before_collision, after_collision);
+    }
+
+    #[test]
+    fn test_eat_food() {
+        let mut before_eat = load_object!(Board, "eat-01-before");
+        let after_eat = load_object!(Board, "eat-01-after");
+
+        before_eat.game_step();
+
+        assert_eq!(before_eat, after_eat);
+    }
+
+    #[test]
+    fn test_headon_collision() {
+        let mut before_collision = load_object!(Board, "headon_collision-01-before");
+        let after_collision = load_object!(Board, "headon_collision-01-after");
+
+        before_collision.game_step();
+
+        assert_eq!(before_collision, after_collision);
+    }
+
+    #[test]
+    fn test_out_of_bounds() {
+        let mut before = load_object!(Board, "out_of_bounds-01-before");
+        let after = load_object!(Board, "out_of_bounds-01-after");
+
+        before.game_step();
+
+        assert_eq!(before, after);
+    }
+
+    #[test]
+    fn test_out_of_health() {
+        let mut before = load_object!(Board, "out_of_health-01-before");
+        let after = load_object!(Board, "out_of_health-01-after");
+
+        before.game_step();
+
+        assert_eq!(before, after);
+    }
+
+    #[test]
+    fn test_simple() {
+        let mut before = load_object!(Board, "simple-02");
+        let after = load_object!(Board, "simple-02");
+
+        before.game_step();
+
+        assert_eq!(before, after);
+    }
+
+    // get_snake()
+    #[test]
+    fn test_get_snake_none() {
+        let board = load_object!(Board, "get_snake_none-01");
+
+        let snake = board.get_snake(1);
+
+        assert_eq!(snake.is_none(), true);
+    }
+
+    #[test]
+    fn test_get_snake_one() {
+        let board = load_object!(Board, "get_snake_one-01");
+
+        let snake = board.get_snake(0);
+
+        assert_eq!(snake.unwrap(), &board.get_snakes()[0]);
+    }
+
+    // minimax()
+    #[test]
+    fn test_minimax() {
+        let mut board = load_object!(Board, "simple-02");
+
+        let result = board.minimax(0, 5);
+        println!("{}", result._get_height());
+
+        assert_eq!(true, true);
     }
 }

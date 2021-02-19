@@ -32,7 +32,7 @@ impl Game {
     pub fn log_data(&self, data: String) {
         let data = data + "\n\n";
         print!("{}", data);
-        if LOGGING{    
+        if LOGGING {    
             let mut file: File = OpenOptions::new()
                 .append(true)
                 .create(true)

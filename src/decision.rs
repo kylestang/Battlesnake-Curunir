@@ -1,6 +1,6 @@
-use crate::requests::MoveResponse;
-use crate::structures::{battlesnake, board, game};
-use battlesnake::Battlesnake;
+use crate::constants::YOU_ID;
+use crate::move_response::MoveResponse;
+use crate::structures::{board, game};
 use board::Board;
 use game::Game;
 use std::cmp::max;
@@ -8,11 +8,9 @@ use std::sync::mpsc;
 use std::thread::spawn;
 use std::time::{Duration, Instant};
 
-pub fn decision(game: &Game, turn: i32, board: Board, _you: Battlesnake) -> MoveResponse {
-    let duration_millis = 120000;
-    //let duration_millis = game.get_timeout() as u64 - 50;
-    let end_time = Instant::now() + Duration::from_millis(duration_millis);
-
+pub fn decision(game: Game, turn: i32, board: Board) -> MoveResponse {
+    let max_level = 4;
+    /*
     // Create a thread for down
     let down_board = board.clone();
     let (down_tx, down_rx) = mpsc::channel();
@@ -77,11 +75,29 @@ pub fn decision(game: &Game, turn: i32, board: Board, _you: Battlesnake) -> Move
     else if left == max_turns {
         direction = String::from("left");
     }
+    
 
     game.log_data(format!(
     "       turn: {}\n  direction: {}\n down turns: {:?}\n   up turns: {:?}\nright turns: {:?}\n left turns: {:?}\n",
     turn, direction, down, up, right, left
     ));
+    */
+    let mut temp_board = board.clone();
+    let result = temp_board.minimax(0, max_level);
+    let mut direction = String::from("up");
+
+    if result.get_snake(YOU_ID).is_some() {
+        let result_head = result.get_snake(YOU_ID).unwrap().get_head();
+        let board_snake = board.get_snake(YOU_ID).unwrap();
+
+        if result_head == board_snake.get_down() {
+            direction = String::from("down");
+        } else if result_head == board_snake.get_right() {
+            direction = String::from("right");
+        } else if result_head == board_snake.get_left() {
+            direction = String::from("left");
+        }
+    }
 
     MoveResponse::new(direction, String::from("Hi!"))
 }
