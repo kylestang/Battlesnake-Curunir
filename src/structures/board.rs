@@ -229,6 +229,10 @@ impl Board {
 
     // Recursive minimax to find score of position
     pub fn minimax(&mut self, current_level: i32, max_level: i32) -> &Board {
+        if DRAWING {
+            self.draw(String::from("test")).unwrap();
+        }
+
         // End case. Return is self is dead or current_level >= max_level
         if current_level >= max_level || self.snakes.len() <= 0 || self.snakes[0].get_id() != YOU_ID {
             return self;
@@ -260,9 +264,16 @@ impl Board {
                 // If new_board is worse than current worst, replace current worst with new_board
                 if !current_board.better_than(&worst_outcomes[j][direction], self.snakes[j].get_id()) {
                     worst_outcomes[j][direction] = Some(current_board.clone());
-                    if current_board.better_than(&worst_outcomes[j][best_worst_outcomes[j]], self.snakes[j].get_id()) {
-                        best_worst_outcomes[j] = direction;
-                    }
+                }
+            }
+        }
+
+        for i in 0..num_snakes {
+            for j in 1..DIRECTIONS {
+                let current_best = &worst_outcomes[i][best_worst_outcomes[i]];
+                let to_test = worst_outcomes[i][j].as_ref().unwrap();
+                if to_test.better_than(current_best, self.snakes[i].get_id()) {
+                    best_worst_outcomes[i] = j;
                 }
             }
         }
@@ -271,6 +282,10 @@ impl Board {
             let snake = &mut self.snakes[i];
             snake.move_to(snake.get_head().get_adjacent()[best_worst_outcomes[i]]);
         }
+
+        self.game_step();
+
+
 
         self
     }
@@ -430,15 +445,15 @@ mod tests {
 
         let result = board.better_than(&None, 0);
 
-        assert_eq!(result, true);
+        assert_eq!(result, false);
     }
     
     // draw()
     #[test]
     fn test_draw() {
-        let board = load_object!(Board, "better_than_food-01-close");
+        let board = load_object!(Board, "test_board-02");
 
-        let result = board.draw(String::from("better_than_food-01-close"));
+        let result = board.draw(String::from("test_board-02"));
         
         assert_eq!(result.is_ok(), true);
     }
@@ -564,10 +579,10 @@ mod tests {
     // minimax()
     #[test]
     fn test_minimax() {
-        let mut board = load_object!(Board, "simple-02");
+        let mut board = load_object!(Board, "test_board-02");
 
-        let result = board.minimax(0, 5);
-        println!("{}", result._get_height());
+        let result = board.minimax(0, 4);
+        result.draw(String::from("test")).unwrap();
 
         assert_eq!(true, true);
     }
