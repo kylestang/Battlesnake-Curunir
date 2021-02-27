@@ -45,15 +45,7 @@ impl Board {
     }
 
     // Return true if self is better than other
-    fn better_than(&self, other: &Option<Board>, snake_id: i32) -> bool {
-        // Return true if other is None
-        // Fix, see minimax selection of best, worst
-        if other.is_none() {
-            return false;
-        }
-
-        let other = other.as_ref().unwrap();
-
+    fn better_than(&self, other: &Board, snake_id: i32) -> bool {
         let self_snake = self.get_snake(snake_id);
         let other_snake = other.get_snake(snake_id);
 
@@ -228,18 +220,19 @@ impl Board {
     }
 
     // Recursive minimax to find score of position
-    pub fn minimax(&mut self, current_level: i32, max_level: i32) -> &Board {
+    pub fn minimax(&mut self, current_level: i32, max_level: i32) -> Board {
         if DRAWING {
             self.draw(String::from("test")).unwrap();
         }
 
         // End case. Return is self is dead or current_level >= max_level
         if current_level >= max_level || self.snakes.len() <= 0 || self.snakes[0].get_id() != YOU_ID {
-            return self;
+            return self.clone();
         }
 
         let num_snakes = self.snakes.len();
-        let mut worst_outcomes: Vec<[Option<Board>; 4]> = vec![[None, None, None, None]; num_snakes];
+        let mut worst_outcomes: Vec<[i32; 4]> = vec![[-1; DIRECTIONS]; num_snakes];
+        let mut outcomes = Vec::with_capacity(DIRECTIONS.pow(num_snakes as u32));
         let mut best_worst_outcomes = vec![0; num_snakes];
 
         // Iterate through all possible boards
@@ -257,37 +250,40 @@ impl Board {
 
             // Get the maximin result from this position
             let current_board = new_board.minimax(current_level + 1, max_level);
+            
 
             // Update worst outcomes
             for j in 0..num_snakes {
                 let direction = (i / DIRECTIONS.pow(j as u32)) % 4;
-                // If new_board is worse than current worst, replace current worst with new_board
-                if !current_board.better_than(&worst_outcomes[j][direction], self.snakes[j].get_id()) {
-                    worst_outcomes[j][direction] = Some(current_board.clone());
+                let best_board = worst_outcomes[j][direction];
+                if best_board < 0 || !current_board.better_than(&outcomes[best_board as usize], self.snakes[j].get_id()) {
+                    worst_outcomes[j][direction] = i as i32;
                 }
             }
+
+            outcomes.push(current_board);
         }
 
         for i in 0..num_snakes {
             for j in 1..DIRECTIONS {
-                let current_best = &worst_outcomes[i][best_worst_outcomes[i]];
-                let to_test = worst_outcomes[i][j].as_ref().unwrap();
-                if to_test.better_than(current_best, self.snakes[i].get_id()) {
+                let best_direction = worst_outcomes[i][best_worst_outcomes[i]] as usize;
+                let current_best = &outcomes[best_direction];
+
+                let test_direction = worst_outcomes[i][j] as usize;
+                let current_test = &outcomes[test_direction];
+
+                if current_test.better_than(current_best, self.snakes[i].get_id()) {
                     best_worst_outcomes[i] = j;
                 }
             }
         }
 
+        let mut return_board = 0;
         for i in 0..num_snakes {
-            let snake = &mut self.snakes[i];
-            snake.move_to(snake.get_head().get_adjacent()[best_worst_outcomes[i]]);
+            return_board += best_worst_outcomes[i] * DIRECTIONS.pow(i as u32);
         }
 
-        self.game_step();
-
-
-
-        self
+        outcomes.swap_remove(return_board)
     }
 
     fn game_step(&mut self) {
@@ -400,8 +396,8 @@ mod tests {
         let better_board = load_object!(Board, "better_than_alive-01-dead");
         let worse_board = load_object!(Board, "better_than_alive-01-alive");
 
-        let true_result = better_board.better_than(&Some(worse_board.clone()), 0);
-        let false_result = worse_board.better_than(&Some(better_board), 0);
+        let true_result = better_board.better_than(&worse_board, 0);
+        let false_result = worse_board.better_than(&better_board, 0);
         
         assert_eq!(true_result && !false_result, true);
     }
@@ -411,8 +407,8 @@ mod tests {
         let better_board = load_object!(Board, "better_than_dead-01-alive");
         let worse_board = load_object!(Board, "better_than_dead-01-dead");
 
-        let true_result = better_board.better_than(&Some(worse_board.clone()), 1);
-        let false_result = worse_board.better_than(&Some(better_board), 1);
+        let true_result = better_board.better_than(&worse_board, 1);
+        let false_result = worse_board.better_than(&better_board, 1);
         
         assert_eq!(true_result && !false_result, true);
     }
@@ -422,8 +418,8 @@ mod tests {
         let better_board = load_object!(Board, "better_than_food-01-close");
         let worse_board = load_object!(Board, "better_than_food-01-far");
 
-        let true_result = better_board.better_than(&Some(worse_board.clone()), 0);
-        let false_result = worse_board.better_than(&Some(better_board), 0);
+        let true_result = better_board.better_than(&worse_board, 0);
+        let false_result = worse_board.better_than(&better_board, 0);
 
         assert_eq!(true_result && !false_result, true);
     }
@@ -433,19 +429,10 @@ mod tests {
         let better_board = load_object!(Board, "better_than_long-01-long");
         let worse_board = load_object!(Board, "better_than_long-01-short");
 
-        let true_result = better_board.better_than(&Some(worse_board.clone()), 0);
-        let false_result = worse_board.better_than(&Some(better_board), 0);
+        let true_result = better_board.better_than(&worse_board, 0);
+        let false_result = worse_board.better_than(&better_board, 0);
 
         assert_eq!(true_result && !false_result, true);
-    }
-
-    #[test]
-    fn test_better_than_none() {
-        let board = load_object!(Board, "better_than_none-01");
-
-        let result = board.better_than(&None, 0);
-
-        assert_eq!(result, false);
     }
     
     // draw()
@@ -579,9 +566,9 @@ mod tests {
     // minimax()
     #[test]
     fn test_minimax() {
-        let mut board = load_object!(Board, "test_board-02");
+        let mut board = load_object!(Board, "test_board-01");
 
-        let result = board.minimax(0, 4);
+        let result = board.minimax(0, 6);
         result.draw(String::from("test")).unwrap();
 
         assert_eq!(true, true);

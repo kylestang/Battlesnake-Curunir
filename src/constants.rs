@@ -11,7 +11,7 @@ pub const YOU_ID: i32 = 0;
 pub const MAX_HEALTH: i32 = 100;
 
 // Log settings
-pub const LOGGING: bool = false;
+pub const LOGGING: bool = true;
 pub const LOG_PATH: &'static str = "logs/";
 pub const TEST_PATH: &'static str = "testdata/";
 
