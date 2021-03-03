@@ -17,7 +17,7 @@ pub struct InputBoard {
 impl InputBoard {
 
     // Convert self to a Board struct
-    pub fn into_board(mut self, you: InputSnake) -> Board {
+    pub fn into_board(mut self, you: InputSnake, turn: i32) -> Board {
         let num_snakes = self.snakes.len();
         // Create a vector to store the snakes
         let mut snakes = Vec::with_capacity(num_snakes);
@@ -38,7 +38,8 @@ impl InputBoard {
             self.width,
             self.food,
             self.hazards,
-            snakes
+            snakes,
+            turn
         )
     }
 }

@@ -1,13 +1,12 @@
 use actix_web::{get, post, web, App, HttpResponse, HttpServer};
-use decision::decision;
 use index_response::IndexResponse;
 use move_request::MoveRequest;
+use move_response::MoveResponse;
 
 use crate::requests::*;
 use crate::structures::*;
 
 mod constants;
-mod decision;
 mod requests;
 mod structures;
 
@@ -37,9 +36,12 @@ async fn game_move(data: web::Json<MoveRequest>) -> HttpResponse {
     // Get data from MoveRequest
     let values = data.into_inner().into_values();
     // Create Board from InputBoard
-    let board = values.2.into_board(values.3);
+    let board = values.2.into_board(values.3, values.1);
+    // Get game from MoveRequest
+    let game = values.0;
     // Respond with direction
-    HttpResponse::Ok().json(decision(values.0, values.1, board))
+    let direction = game.decision(board);
+    HttpResponse::Ok().json(MoveResponse::new(direction, String::from("Hi!")))
 }
 
 // Game end

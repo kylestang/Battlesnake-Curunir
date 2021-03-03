@@ -1,8 +1,9 @@
 use image::{ImageResult, Rgb, RgbImage};
 use std::convert::TryInto;
-use std::time::{Duration, Instant};
 
 use crate::battlesnake::Battlesnake;
+use crate::board_order::BoardOrder;
+use crate::board_order::BoardOrder::*;
 use crate::constants::{DIRECTIONS, DRAWING, DRAW_PATH, EYE_RATIO, FOOD_RATIO, PUPIL_RATIO, TILE_SIZE, YOU_ID};
 use crate::coordinate::Coordinate;
 
@@ -12,12 +13,13 @@ pub struct Board {
     width: i32,
     food: Vec<Coordinate>,
     hazards: Vec<Coordinate>,
-    snakes: Vec<Battlesnake>
+    snakes: Vec<Battlesnake>,
+    turn: i32
 }
 
 impl Board {
-    pub fn new(height: i32, width: i32, food: Vec<Coordinate>, hazards: Vec<Coordinate>, snakes: Vec<Battlesnake>) -> Board {
-        Board {height, width, food, hazards, snakes}
+    pub fn new(height: i32, width: i32, food: Vec<Coordinate>, hazards: Vec<Coordinate>, snakes: Vec<Battlesnake>, turn: i32) -> Board {
+        Board {height, width, food, hazards, snakes, turn}
     }
 
     pub fn _get_height(&self) -> i32 {
@@ -44,25 +46,29 @@ impl Board {
         &mut self.snakes
     }
 
+    pub fn get_turn(&self) -> i32 {
+        self.turn
+    }
+
     // Return true if self is better than other
-    pub fn better_than(&self, other: &Board, snake_id: i32) -> bool {
+    pub fn compare_to(&self, other: &Board, snake_id: i32) -> BoardOrder {
         let self_snake = self.get_snake(snake_id);
         let other_snake = other.get_snake(snake_id);
 
         // Board where self is alive is better
         if self_snake.is_some() && other_snake.is_none() {
-            return true;
+            return Greater;
         } else if self_snake.is_none() && other_snake.is_some() {
-            return false;
+            return Less;
         }
 
         // Board where enemy snakes are dead is better
         let self_snakes = self.snakes.len();
         let other_snakes = other.snakes.len();
         if self_snakes < other_snakes {
-            return true;
+            return Greater;
         } else if self_snakes > other_snakes {
-            return false;
+            return Less;
         }
 
         // If both snakes are alive
@@ -74,23 +80,35 @@ impl Board {
             let self_length = self_snake.get_length();
             let other_length = other_snake.get_length();
             if self_length > other_length {
-                return true;
+                return Greater;
             } else if self_length < other_length {
-                return false;
+                return Less;
             }
 
             // Board where self is closer to food is better
             let self_closest_food = self.find_closest_food(self_snake.get_head());
             let other_closest_food = other.find_closest_food(other_snake.get_head());
-            if self_closest_food < other_closest_food {
-                return true;
-            } else if self_closest_food > other_closest_food {
-                return false;
+            if self_closest_food.is_some() && other_closest_food.is_some() {
+                let self_closest_food = self_closest_food.unwrap();
+                let other_closest_food = other_closest_food.unwrap();
+
+                let self_distance = self_closest_food.distance_to(self_snake.get_head());
+                let other_distance = other_closest_food.distance_to(other_snake.get_head());
+
+                if self_distance < other_distance {
+                    return Greater;
+                } else if self_distance > other_distance {
+                    return Less;
+                }
+            } else if self_closest_food.is_some() && other_closest_food.is_none() {
+                return Greater;
+            } else if self_closest_food.is_none() && other_closest_food.is_some() {
+                return Less;
             }
         }
 
-        // Default return true
-        true
+        // Default to Equal
+        Equal
     }
 
     pub fn draw(&self, file_name: String) -> ImageResult<()> {
@@ -194,16 +212,18 @@ impl Board {
     }
 
     // Returns the distance to the closest food to pos
-    fn find_closest_food(&self, pos: Coordinate) -> Option<i32> {
+    pub fn find_closest_food(&self, pos: Coordinate) -> Option<Coordinate> {
         if self.food.len() > 0 {
-            let mut closest_distance = (self.food[0].get_x() - pos.get_x()).abs() + (self.food[0].get_y() - pos.get_y()).abs();
+            let mut closest_distance = pos.distance_to(self.food[0]);
+            let mut closest_food = self.food[0];
             for i in 1..self.food.len() {
-                let current_distance = (self.food[i].get_x() - pos.get_x()).abs() + (self.food[i].get_y() - pos.get_y()).abs();
+                let current_distance = pos.distance_to(self.food[i]);
                 if current_distance < closest_distance {
                     closest_distance = current_distance;
+                    closest_food = self.food[i];
                 }
             }
-            return Some(closest_distance);
+            return Some(closest_food);
         } else {
             None
         }
@@ -279,7 +299,7 @@ impl Board {
             for j in 0..num_snakes - 1 {
                 let direction = (i / DIRECTIONS.pow(j as u32)) % 4;
                 let best_board = worst_outcomes[j][direction];
-                if best_board < 0 || !current_board.better_than(&outcomes[best_board as usize], self.snakes[j + 1].get_id()) {
+                if best_board < 0 || current_board.compare_to(&outcomes[best_board as usize], self.snakes[j + 1].get_id()) == Less {
                     worst_outcomes[j][direction] = i as i32;
                 }
             }
@@ -295,7 +315,7 @@ impl Board {
                 let test_direction = worst_outcomes[i][j] as usize;
                 let current_test = &outcomes[test_direction];
 
-                if current_test.better_than(current_best, self.snakes[i + 1].get_id()) {
+                if current_test.compare_to(current_best, self.snakes[i + 1].get_id()) == Greater {
                     best_worst_outcomes[i] = j;
                 }
             }
@@ -340,13 +360,12 @@ impl Board {
 
             // Get the maximin result from this position
             let current_board = new_board.minimax(current_level + 1, max_level);
-            
 
             // Update worst outcomes
             for j in 0..num_snakes {
                 let direction = (i / DIRECTIONS.pow(j as u32)) % 4;
                 let best_board = worst_outcomes[j][direction];
-                if best_board < 0 || !current_board.better_than(&outcomes[best_board as usize], self.snakes[j].get_id()) {
+                if best_board < 0 || current_board.compare_to(&outcomes[best_board as usize], self.snakes[j].get_id()) == Less {
                     worst_outcomes[j][direction] = i as i32;
                 }
             }
@@ -362,7 +381,7 @@ impl Board {
                 let test_direction = worst_outcomes[i][j] as usize;
                 let current_test = &outcomes[test_direction];
 
-                if current_test.better_than(current_best, self.snakes[i].get_id()) {
+                if current_test.compare_to(current_best, self.snakes[i].get_id()) == Greater {
                     best_worst_outcomes[i] = j;
                 }
             }
@@ -392,7 +411,7 @@ impl Board {
 
             // Remove food if eaten
             if food_eaten {
-                self.food.remove(i);
+                self.food.swap_remove(i);
             } else {
                 i += 1;
             }
@@ -444,6 +463,8 @@ impl Board {
                 }
             }
         }
+
+        self.turn += 1;
     }
 }
 
@@ -455,7 +476,7 @@ macro_rules! load_object {
                 .read(true).open(format!("{}{}.json", crate::constants::TEST_PATH, $filename)).unwrap();
             let board: crate::move_request::MoveRequest = serde_json::from_reader(file).unwrap();
             let board = board.into_values();
-            let board = board.2.into_board(board.3);
+            let board = board.2.into_board(board.3, 0);
             board
         }
     };
@@ -480,27 +501,28 @@ macro_rules! load_object {
 
 #[cfg(test)]
 mod tests {
-    // better_than()
+    use super::*;
+    // compare_to()
     #[test]
-    fn test_better_than_alive() {
+    fn test_compare_to_alive() {
         let better_board = load_object!(Board, "better_than_alive-01-dead");
         let worse_board = load_object!(Board, "better_than_alive-01-alive");
 
-        let true_result = better_board.better_than(&worse_board, 0);
-        let false_result = worse_board.better_than(&better_board, 0);
+        let true_result = better_board.compare_to(&worse_board, 0);
+        let false_result = worse_board.compare_to(&better_board, 0);
         
-        assert_eq!(true_result && !false_result, true);
+        assert_eq!(true_result == Greater && false_result == Less, true);
     }
 
     #[test]
-    fn test_better_than_dead() {
+    fn test_compare_to_dead() {
         let better_board = load_object!(Board, "better_than_dead-01-alive");
         let worse_board = load_object!(Board, "better_than_dead-01-dead");
 
-        let true_result = better_board.better_than(&worse_board, 1);
-        let false_result = worse_board.better_than(&better_board, 1);
+        let true_result = better_board.compare_to(&worse_board, 1);
+        let false_result = worse_board.compare_to(&better_board, 1);
         
-        assert_eq!(true_result && !false_result, true);
+        assert_eq!(true_result == Greater && false_result == Less, true);
     }
 
     #[test]
@@ -508,10 +530,10 @@ mod tests {
         let better_board = load_object!(Board, "better_than_food-01-close");
         let worse_board = load_object!(Board, "better_than_food-01-far");
 
-        let true_result = better_board.better_than(&worse_board, 0);
-        let false_result = worse_board.better_than(&better_board, 0);
+        let true_result = better_board.compare_to(&worse_board, 0);
+        let false_result = worse_board.compare_to(&better_board, 0);
 
-        assert_eq!(true_result && !false_result, true);
+        assert_eq!(true_result == Greater && false_result == Less, true);
     }
 
     #[test]
@@ -519,10 +541,10 @@ mod tests {
         let better_board = load_object!(Board, "better_than_long-01-long");
         let worse_board = load_object!(Board, "better_than_long-01-short");
 
-        let true_result = better_board.better_than(&worse_board, 0);
-        let false_result = worse_board.better_than(&better_board, 0);
+        let true_result = better_board.compare_to(&worse_board, 0);
+        let false_result = worse_board.compare_to(&better_board, 0);
 
-        assert_eq!(true_result && !false_result, true);
+        assert_eq!(true_result == Greater && false_result == Less, true);
     }
     
     // draw()
@@ -551,7 +573,7 @@ mod tests {
 
         let food = board.find_closest_food(board.get_snakes()[0].get_head());
 
-        assert_eq!(food.unwrap(), 4);
+        assert_eq!(food.unwrap(), Coordinate::new(5, 5));
     }
 
     #[test]
@@ -560,16 +582,17 @@ mod tests {
 
         let food = board.find_closest_food(board.get_snakes()[0].get_head());
 
-        assert_eq!(food.unwrap(), 3);
+        assert_eq!(food.unwrap(), Coordinate::new(0, 3));
     }
 
     // game_step()
     #[test]
     fn test_body_collision() {
         let mut before_collision = load_object!(Board, "body_collision-01-before");
-        let after_collision = load_object!(Board, "body_collision-01-after");
+        let mut after_collision = load_object!(Board, "body_collision-01-after");
 
         before_collision.game_step();
+        after_collision.turn += 1;
 
         assert_eq!(before_collision, after_collision);
     }
@@ -577,9 +600,10 @@ mod tests {
     #[test]
     fn test_double_headon_collision() {
         let mut before_collision = load_object!(Board, "double_headon_collision-01-before");
-        let after_collision = load_object!(Board, "double_headon_collision-01-after");
+        let mut after_collision = load_object!(Board, "double_headon_collision-01-after");
 
         before_collision.game_step();
+        after_collision.turn += 1;
 
         assert_eq!(before_collision, after_collision);
     }
@@ -587,9 +611,10 @@ mod tests {
     #[test]
     fn test_eat_food() {
         let mut before_eat = load_object!(Board, "eat-01-before");
-        let after_eat = load_object!(Board, "eat-01-after");
+        let mut after_eat = load_object!(Board, "eat-01-after");
 
         before_eat.game_step();
+        after_eat.turn += 1;
 
         assert_eq!(before_eat, after_eat);
     }
@@ -597,9 +622,10 @@ mod tests {
     #[test]
     fn test_headon_collision() {
         let mut before_collision = load_object!(Board, "headon_collision-01-before");
-        let after_collision = load_object!(Board, "headon_collision-01-after");
+        let mut after_collision = load_object!(Board, "headon_collision-01-after");
 
         before_collision.game_step();
+        after_collision.turn += 1;
 
         assert_eq!(before_collision, after_collision);
     }
@@ -607,9 +633,10 @@ mod tests {
     #[test]
     fn test_out_of_bounds() {
         let mut before = load_object!(Board, "out_of_bounds-01-before");
-        let after = load_object!(Board, "out_of_bounds-01-after");
+        let mut after = load_object!(Board, "out_of_bounds-01-after");
 
         before.game_step();
+        after.turn += 1;
 
         assert_eq!(before, after);
     }
@@ -617,9 +644,10 @@ mod tests {
     #[test]
     fn test_out_of_health() {
         let mut before = load_object!(Board, "out_of_health-01-before");
-        let after = load_object!(Board, "out_of_health-01-after");
+        let mut after = load_object!(Board, "out_of_health-01-after");
 
         before.game_step();
+        after.turn += 1;
 
         assert_eq!(before, after);
     }
@@ -627,9 +655,10 @@ mod tests {
     #[test]
     fn test_simple() {
         let mut before = load_object!(Board, "simple-02");
-        let after = load_object!(Board, "simple-02");
+        let mut after = load_object!(Board, "simple-02");
 
         before.game_step();
+        after.turn += 1;
 
         assert_eq!(before, after);
     }

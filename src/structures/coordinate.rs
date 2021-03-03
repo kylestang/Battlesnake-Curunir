@@ -20,6 +20,10 @@ impl Coordinate {
         self.y
     }
 
+    pub fn distance_to(&self, other: Coordinate) -> i32 {
+        (self.x - other.x).abs() + (self.y - other.y).abs()
+    }
+
     // Down, up, right, left
     pub fn get_adjacent(&self) -> [Coordinate; DIRECTIONS] {
         [
@@ -44,5 +48,20 @@ impl Coordinate {
 
     pub fn get_left(&self) -> Coordinate {
         Coordinate::new(self.x - 1, self.y)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_distance_to() {
+        let coord_1 = Coordinate::new(3, 5);
+        let coord_2 = Coordinate::new(8, 4);
+
+        let distance = coord_1.distance_to(coord_2);
+
+        assert_eq!(distance, 6);
     }
 }
