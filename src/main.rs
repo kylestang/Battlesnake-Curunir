@@ -85,7 +85,7 @@ mod tests {
 
     #[actix_rt::test]
     async fn test_move_post() {
-        let data = load_object!(MoveRequest, "simple-01");
+        let data = load_object!(MoveRequest, "simple-02");
 
         let mut app = test::init_service(App::new().service(game_move)).await;
         let req = test::TestRequest::post().set_json(&data).uri("/battlesnake/curunir/move").to_request();

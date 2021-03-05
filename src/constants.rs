@@ -7,9 +7,10 @@ pub const TAIL: &'static str = "sharp";
 
 // Game constants
 pub const DIRECTIONS: usize = 4;
-pub const YOU_ID: i32 = 0;
 pub const MAX_HEALTH: i32 = 100;
-pub const MAX_LEVEL: i32 = 4;
+pub const MAX_LEVEL: i32 = 5;
+pub const MAX_SEARCH: i32 = 20;
+pub const YOU_ID: i32 = 0;
 
 // Log settings
 pub const LOGGING: bool = true;

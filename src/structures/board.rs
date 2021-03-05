@@ -50,6 +50,63 @@ impl Board {
         self.turn
     }
 
+    // Find the longest possible route a snake can travel from the current position
+    pub fn check_area(&self, pos: Coordinate, mut current_area: i32, max_area: i32, gone: &mut Vec<Coordinate>) -> i32 {
+
+        // Reached end of search, return
+        if current_area >= max_area {
+            return current_area;
+        }
+
+        // Check out of bounds
+        if pos.get_x() < 0 
+        || pos.get_x() > self.width - 1 
+        || pos.get_y() < 0 
+        || pos.get_y() > self.height - 1 
+        {
+            return current_area;
+        }
+
+        // Check if tile has already been visited
+        if gone.contains(&pos) {
+            return current_area;
+        }
+
+        // Check for snake collisions, return max_area if I can tail chase
+        // TODO: implement food consideration
+        for snake in &self.snakes {
+            let body = snake.get_body();
+            for i in 0..snake.get_length() {
+                if pos == body[i] {
+                    if snake.get_length() - i - 1 > current_area as usize {
+                        return current_area;
+                    } else {
+                        return max_area;
+                    }
+                }
+            }
+        }
+
+        current_area += 1;
+        gone.push(pos);
+
+        // Find the largest area from the current position
+        let mut largest_area = 0;
+        for tile in &pos.get_adjacent() {
+            // Discard paths of alternate routes, keep paths used to get here
+            gone.resize_with(current_area as usize, Default::default);
+            let new_area = self.check_area(*tile, current_area, max_area, gone);
+            if new_area >= max_area {
+                return new_area;
+            }
+            if new_area > largest_area {
+                largest_area = new_area;
+            }
+        }
+
+        largest_area
+    }
+
     // Return true if self is better than other
     pub fn compare_to(&self, other: &Board, snake_id: i32) -> BoardOrder {
         let self_snake = self.get_snake(snake_id);
@@ -502,7 +559,38 @@ macro_rules! load_object {
 #[cfg(test)]
 mod tests {
     use super::*;
-    // compare_to()
+    // check_area
+    #[test]
+    fn test_check_area_closed() {
+        let board = load_object!(Board, "check_area_closed-01");
+        let pos = board.get_snakes()[0].get_head().get_left();
+
+        let result = board.check_area(pos, 0, 10, &mut Vec::with_capacity(10));
+
+        assert_eq!(result, 5);
+    }
+
+    #[test]
+    fn test_check_area_open() {
+        let board = load_object!(Board, "check_area_open-01");
+        let pos = board.get_snakes()[0].get_head().get_up();
+
+        let result = board.check_area(pos, 0,5, &mut Vec::with_capacity(5));
+
+        assert_eq!(result, 5);
+    }
+
+    #[test]
+    fn test_check_area_route() {
+        let board = load_object!(Board, "check_area_route-01");
+        let pos = board.get_snakes()[0].get_head().get_down();
+
+        let result = board.check_area(pos, 0, 10, &mut Vec::with_capacity(10));
+        
+        assert_eq!(result, 10);
+    }
+
+    // compare_to
     #[test]
     fn test_compare_to_alive() {
         let better_board = load_object!(Board, "better_than_alive-01-dead");
@@ -550,9 +638,9 @@ mod tests {
     // draw()
     #[test]
     fn test_draw() {
-        let board = load_object!(Board, "test_board-02");
+        let board = load_object!(Board, "check_area_route-01");
 
-        let result = board.draw(String::from("test_board-02"));
+        let result = board.draw(String::from("check_area_route-01"));
         
         assert_eq!(result.is_ok(), true);
     }

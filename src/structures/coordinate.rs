@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use crate::constants::DIRECTIONS;
 
-#[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[derive(Clone, Copy, Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
 pub struct Coordinate {
     x: i32,
     y: i32
@@ -20,6 +20,7 @@ impl Coordinate {
         self.y
     }
 
+    // Returns distance from self to other
     pub fn distance_to(&self, other: Coordinate) -> i32 {
         (self.x - other.x).abs() + (self.y - other.y).abs()
     }

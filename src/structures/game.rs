@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use std::cmp::max;
+use std::cmp::{max, min};
 use std::fs::{File, OpenOptions};
 use std::io::Write;
 use std::sync::mpsc;
@@ -7,7 +7,7 @@ use std::thread::spawn;
 
 use crate::board::Board;
 use crate::board_order::BoardOrder::*;
-use crate::constants::{LOGGING, LOG_PATH, MAX_LEVEL, YOU_ID};
+use crate::constants::{LOGGING, LOG_PATH, MAX_SEARCH, MAX_LEVEL, YOU_ID};
 use crate::ruleset::Ruleset;
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -34,6 +34,7 @@ impl Game {
         self.timeout
     }
 
+    // Returns the direction to go based on the game board
     pub fn decision(&self, board: Board) -> String {
         // Predict future turns
         // Create a thread for down
@@ -67,6 +68,61 @@ impl Game {
             let left = left_board.check_left(0, MAX_LEVEL);
             left_tx.send(left).unwrap();
         });
+
+        // About myself
+        let you = &board.get_snakes()[0];
+        let current_pos = you.get_head();
+        let max_search = min(you.get_length() as i32, MAX_SEARCH);
+
+        // Check area I can move in each direction
+        // Check down area
+        let down_area_board = board.clone();
+        let (down_area_tx, down_area_rx) = mpsc::channel();
+        let down_area_handle = spawn(move || {
+            let down_area = down_area_board.check_area(
+                current_pos.get_down(), 0, max_search,
+                &mut Vec::with_capacity(max_search as usize)
+            );
+            down_area_tx.send(down_area).unwrap();
+        });
+
+        // Check up area
+        let up_area_board = board.clone();
+        let (up_area_tx, up_area_rx) = mpsc::channel();
+        let up_area_handle = spawn(move || {
+            let up_area = up_area_board.check_area(
+                current_pos.get_up(), 0, max_search,
+                &mut Vec::with_capacity(max_search as usize)
+            );
+            up_area_tx.send(up_area).unwrap();
+        });
+
+        // Check right area
+        let right_area_board = board.clone();
+        let (right_area_tx, right_area_rx) = mpsc::channel();
+        let right_area_handle = spawn(move || {
+            let right_area = right_area_board.check_area(
+                current_pos.get_right(), 0, max_search,
+                &mut Vec::with_capacity(max_search as usize)
+            );
+            right_area_tx.send(right_area).unwrap();
+        });
+
+        // Check left area
+        let left_area_board = board.clone();
+        let (left_area_tx, left_area_rx) = mpsc::channel();
+        let left_area_handle = spawn(move || {
+            let left_area = left_area_board.check_area(
+                current_pos.get_left(), 0, max_search,
+                &mut Vec::with_capacity(max_search as usize)
+            );
+            left_area_tx.send(left_area).unwrap();
+        });
+
+        // Find closest food
+        let closest_food = board.find_closest_food(current_pos);
+        let food_exists = closest_food.is_some();
+        let closest_food = closest_food.unwrap_or_default();
     
         // Finish down thread
         let down_board = down_rx.recv().unwrap();
@@ -83,9 +139,9 @@ impl Game {
         // Finish left thread
         let left_board = left_rx.recv().unwrap();
         left_handle.join().unwrap();
-    
+
+        // Find the best directions
         let mut best_boards = Vec::with_capacity(4);
-        
         best_boards.push(&down_board);
     
         let up_comp = up_board.compare_to(best_boards[0], YOU_ID);
@@ -112,117 +168,275 @@ impl Game {
             best_boards.push(&left_board);
         }
 
-        let you = &board.get_snakes()[0];
-        let current_pos = you.get_head();
-
+        // Store best directions
         let down_best = best_boards.contains(&&down_board);
         let up_best = best_boards.contains(&&up_board);
         let right_best = best_boards.contains(&&right_board);
         let left_best = best_boards.contains(&&left_board);
 
-        let survival = best_boards[0].get_snake(YOU_ID).is_some();
+        // True if I can survive
+        let down_survival = down_board.get_snake(YOU_ID).is_some();
+        let up_survival = up_board.get_snake(YOU_ID).is_some();
+        let right_survival = right_board.get_snake(YOU_ID).is_some();
+        let left_survival = left_board.get_snake(YOU_ID).is_some();
 
-        // Find closest food
-        let closest_food = board.find_closest_food(current_pos);
-        let food_exists = closest_food.is_some();
+        // True if other snakes will die
+        let will_kill = best_boards[0].get_snakes().len() < board.get_snakes().len();
 
         // Find max survival time
         let down_turn = down_board.get_turn();
         let up_turn = up_board.get_turn();
         let right_turn = right_board.get_turn();
         let left_turn = left_board.get_turn();
-        let max_turns = max(max(down_turn, up_turn), max(right_turn, left_turn));
+        // let max_turns = max(max(down_turn, up_turn), max(right_turn, left_turn));
+
+        // Finish down_area thread
+        let down_area = down_area_rx.recv().unwrap();
+        down_area_handle.join().unwrap();
+        let can_escape_down = down_area >= max_search;
+
+        // Finish up_area thread
+        let up_area = up_area_rx.recv().unwrap();
+        up_area_handle.join().unwrap();
+        let can_escape_up = up_area >= max_search;
+
+        // Finish right_area thread
+        let right_area = right_area_rx.recv().unwrap();
+        right_area_handle.join().unwrap();
+        let can_escape_right = right_area >= max_search;
+
+        // Finish left_area thread
+        let left_area = left_area_rx.recv().unwrap();
+        left_area_handle.join().unwrap();
+        let can_escape_left = left_area >= max_search;
+    
+        // Find max area available
+        let max_area = max(max(down_area, up_area), max(right_area, left_area));
 
 
+        // Take all data and decide on direction
         let decision;
         let direction;
 
-        // Move towards closest food with best move
-        if
-            survival
-            && down_best
-            && food_exists && closest_food.unwrap().get_y() < current_pos.get_y() {
+        // Move towards kill with best move
+        if down_survival
+        && will_kill
+        && down_best {
             decision = 0;
             direction = String::from("down");
-        } else if 
-            survival
-            && up_best
-            && food_exists && closest_food.unwrap().get_y() > current_pos.get_y() {
+        } else if
+        up_survival
+        && will_kill
+        && up_best {
             decision = 1;
             direction = String::from("up");
         } else if
-            survival
-            && right_best
-            && food_exists && closest_food.unwrap().get_x() > current_pos.get_x() {
+        right_survival
+        && will_kill
+        && right_best {
             decision = 2;
             direction = String::from("right");
         } else if
-            survival
-            && left_best
-            && food_exists && closest_food.unwrap().get_x() < current_pos.get_x() {
+        left_survival
+        && will_kill
+        && left_best {
             decision = 3;
             direction = String::from("left");
-        }
-
-        // Move towards best move
-        else if 
-            survival
-            && down_best {
+        
+        // Move towards closest food with best move
+        } else if
+        down_survival
+        && can_escape_down
+        && down_best
+        && food_exists && closest_food.get_y() < current_pos.get_y() {
             decision = 4;
             direction = String::from("down");
         } else if 
-            survival
-            && up_best {
+        up_survival
+        && can_escape_up
+        && up_best
+        && food_exists && closest_food.get_y() > current_pos.get_y() {
             decision = 5;
             direction = String::from("up");
-        } else if 
-            survival
-            && right_best {
+        } else if
+        right_survival
+        && can_escape_right
+        && right_best
+        && food_exists && closest_food.get_x() > current_pos.get_x() {
             decision = 6;
             direction = String::from("right");
-        } else if 
-            survival
-            && left_best {
+        } else if
+        left_survival
+        && can_escape_left
+        && left_best
+        && food_exists && closest_food.get_x() < current_pos.get_x() {
             decision = 7;
             direction = String::from("left");
         }
 
-        // Go for most turns, no survival
-        else if 
-            down_best
-            && down_turn == max_turns {
+        // Move towards escape with best move
+        else if
+        down_survival
+        && can_escape_down
+        && down_best {
             decision = 8;
             direction = String::from("down");
-        } else if
-            up_best
-            && up_turn == max_turns {
+        } else if 
+        up_survival
+        && can_escape_up
+        && up_best {
             decision = 9;
             direction = String::from("up");
         } else if
-            right_best
-            && right_turn == max_turns {
+        right_survival
+        && can_escape_right
+        && right_best {
             decision = 10;
             direction = String::from("right");
         } else if
-            left_best
-            && left_turn == max_turns {
+        left_survival
+        && can_escape_left
+        && left_best {
             decision = 11;
+            direction = String::from("left");
+        }
+
+        // Move towards escape
+        else if
+        down_survival
+        && can_escape_down {
+            decision = 12;
+            direction = String::from("down");
+        } else if
+        up_survival
+        && can_escape_up {
+            decision = 13;
+            direction = String::from("up");
+        } else if
+        right_survival
+        && can_escape_right {
+            decision = 14;
+            direction = String::from("right");
+        } else if
+        left_survival
+        && can_escape_left {
+            decision = 15;
+            direction = String::from("left");
+        }
+
+        // Move towards best move, can escape
+        else if
+        can_escape_down
+        && down_best {
+            decision = 16;
+            direction = String::from("down");
+        } else if
+        can_escape_up
+        && up_best {
+            decision = 17;
+            direction = String::from("up");
+        } else if
+        can_escape_right
+        && right_best {
+            decision = 18;
+            direction = String::from("right");
+        } else if
+        can_escape_left
+        && left_best {
+            decision = 19;
+            direction = String::from("left");
+        }
+
+        // Move towards escape
+        else if
+        can_escape_down {
+            decision = 20;
+            direction = String::from("down");
+        } else if
+        can_escape_up {
+            decision = 21;
+            direction = String::from("up");
+        } else if
+        can_escape_right {
+            decision = 22;
+            direction = String::from("right");
+        } else if
+        can_escape_left {
+            decision = 23;
+            direction = String::from("left");
+        }
+
+        // Go for best move with most turns, no survival
+        else if 
+        down_best
+        && down_area == max_area {
+            decision = 24;
+            direction = String::from("down");
+        } else if
+        up_best
+        && up_area == max_area {
+            decision = 25;
+            direction = String::from("up");
+        } else if
+        right_best
+        && right_area == max_area {
+            decision = 26;
+            direction = String::from("right");
+        } else if
+        left_best
+        && left_area == max_area {
+            decision = 27;
+            direction = String::from("left")
+        }
+
+        // Go for most turns, no survival
+        else if
+        down_area == max_area {
+            decision = 28;
+            direction = String::from("down");
+        } else if
+        up_area == max_area {
+            decision = 29;
+            direction = String::from("up");
+        } else if
+        right_area == max_area {
+            decision = 30;
+            direction = String::from("right");
+        } else if
+        left_area == max_area {
+            decision = 31;
             direction = String::from("left")
         }
 
         // Default
         else {
-            decision = 11;
+            decision = 32;
             direction = String::from("up");
         }
 
         // Log decision        
-        self.log_data(format!("turn: {}\ndirection: {}\ndecision: {}\n", board.get_turn(), direction, decision));
+        self.log_data(format!("
+       turn: {}
+  direction: {}
+   decision: {}
+  max turns: {}
+ down turns: {}
+   up turns: {}
+right turns: {}
+ left turns: {}
+   max area: {}
+  down area: {}
+    up area: {}
+ right area: {}
+  left area: {}",
+board.get_turn(), direction, decision, MAX_LEVEL, down_turn, up_turn, right_turn, left_turn, max_search, down_area, up_area, right_area, left_area)
+);
     
         // Return direction
         direction
     }
 
+    // Prints data to stdout and writes to log file
     pub fn log_data(&self, data: String) {
         let data = data + "\n\n";
         print!("{}", data);
