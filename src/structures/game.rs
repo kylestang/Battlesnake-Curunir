@@ -419,6 +419,7 @@ impl Game {
        turn: {}
   direction: {}
    decision: {}
+  will kill: {}
   max turns: {}
  down turns: {}
    up turns: {}
@@ -429,7 +430,7 @@ right turns: {}
     up area: {}
  right area: {}
   left area: {}",
-board.get_turn(), direction, decision, MAX_LEVEL, down_turn, up_turn, right_turn, left_turn, max_search, down_area, up_area, right_area, left_area)
+board.get_turn(), direction, decision, will_kill, MAX_LEVEL, down_turn, up_turn, right_turn, left_turn, max_search, down_area, up_area, right_area, left_area)
 );
     
         // Return direction
