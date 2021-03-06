@@ -1,6 +1,6 @@
 use std::collections::VecDeque;
 
-use crate::constants::MAX_HEALTH;
+use crate::constants::{DIRECTIONS, MAX_HEALTH};
 use crate::coordinate::Coordinate;
 
 // Define the Battlesnake struct
@@ -81,6 +81,27 @@ impl Battlesnake {
         self.body.push_back(self.body.back().unwrap().clone());
         // Increase length by 1
         self.length += 1;
+    }
+
+    // Return all tiles adjacent to head other than body[1]
+    pub fn get_options(&self) -> Vec<Coordinate> {
+        let mut options = Vec::with_capacity(DIRECTIONS);
+        let second = self.body[1];
+
+        if self.get_down() != second {
+            options.push(self.get_down());
+        }
+        if self.get_up() != second {
+            options.push(self.get_up());
+        }
+        if self.get_right() != second {
+            options.push(self.get_right());
+        }
+        if self.get_left() != second {
+            options.push(self.get_left());
+        }
+
+        options
     }
 
     // Returns true if self lost head-to-head against other
