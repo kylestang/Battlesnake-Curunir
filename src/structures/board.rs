@@ -30,8 +30,8 @@ impl Board {
         self.width
     }
 
-    pub fn _get_food(&mut self) -> &mut Vec<Coordinate> {
-        &mut self.food
+    pub fn get_food(&self) -> &Vec<Coordinate> {
+        &self.food
     }
 
     pub fn _get_hazards(&self) -> &Vec<Coordinate> {
