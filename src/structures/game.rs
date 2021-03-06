@@ -86,7 +86,7 @@ impl Game {
         let down_area_handle = spawn(move || {
             let down_area = down_area_board.check_area(
                 current_pos.get_down(), 0, max_search,
-                &mut Vec::with_capacity(max_search as usize)
+                &mut Vec::with_capacity(max_search as usize), 0
             );
             down_area_tx.send(down_area).unwrap();
         });
@@ -97,7 +97,7 @@ impl Game {
         let up_area_handle = spawn(move || {
             let up_area = up_area_board.check_area(
                 current_pos.get_up(), 0, max_search,
-                &mut Vec::with_capacity(max_search as usize)
+                &mut Vec::with_capacity(max_search as usize), 0
             );
             up_area_tx.send(up_area).unwrap();
         });
@@ -108,7 +108,7 @@ impl Game {
         let right_area_handle = spawn(move || {
             let right_area = right_area_board.check_area(
                 current_pos.get_right(), 0, max_search,
-                &mut Vec::with_capacity(max_search as usize)
+                &mut Vec::with_capacity(max_search as usize), 0
             );
             right_area_tx.send(right_area).unwrap();
         });
@@ -119,7 +119,7 @@ impl Game {
         let left_area_handle = spawn(move || {
             let left_area = left_area_board.check_area(
                 current_pos.get_left(), 0, max_search,
-                &mut Vec::with_capacity(max_search as usize)
+                &mut Vec::with_capacity(max_search as usize), 0
             );
             left_area_tx.send(left_area).unwrap();
         });

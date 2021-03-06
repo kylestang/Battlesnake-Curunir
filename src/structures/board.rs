@@ -51,7 +51,7 @@ impl Board {
     }
 
     // Find the longest possible route a snake can travel from the current position
-    pub fn check_area(&self, pos: Coordinate, mut current_area: i32, max_area: i32, gone: &mut Vec<Coordinate>) -> i32 {
+    pub fn check_area(&self, pos: Coordinate, mut current_area: i32, max_area: i32, gone: &mut Vec<Coordinate>, mut food_eaten: usize) -> i32 {
 
         // Reached end of search, return
         if current_area >= max_area {
@@ -72,17 +72,30 @@ impl Board {
             return current_area;
         }
 
+        if self.food.contains(&pos) {
+            food_eaten += 1;
+        }
+
         // Check for snake collisions, return max_area if I can tail chase
         // TODO: implement food consideration
         for snake in &self.snakes {
             let body = snake.get_body();
             for i in 0..snake.get_length() {
                 if pos == body[i] {
-                    if snake.get_length() - i - 1 > current_area as usize {
-                        return current_area;
+                    if snake.get_id() == YOU_ID {
+                        if snake.get_length() - i - 1 > current_area as usize - food_eaten {
+                            return current_area;
+                        } else {
+                            return max_area;
+                        }
                     } else {
-                        return max_area;
+                        if snake.get_length() - i - 1 > current_area as usize {
+                            return current_area;
+                        } else {
+                            return max_area;
+                        }
                     }
+                    
                 }
             }
         }
@@ -95,7 +108,7 @@ impl Board {
         for tile in &pos.get_adjacent() {
             // Discard paths of alternate routes, keep paths used to get here
             gone.resize_with(current_area as usize, Default::default);
-            let new_area = self.check_area(*tile, current_area, max_area, gone);
+            let new_area = self.check_area(*tile, current_area, max_area, gone, food_eaten);
             if new_area >= max_area {
                 return new_area;
             }
@@ -569,7 +582,7 @@ mod tests {
         let board = load_object!(Board, "check_area_closed-01");
         let pos = board.get_snakes()[0].get_head().get_left();
 
-        let result = board.check_area(pos, 0, 10, &mut Vec::with_capacity(10));
+        let result = board.check_area(pos, 0, 10, &mut Vec::with_capacity(10), 0);
 
         assert_eq!(result, 5);
     }
@@ -579,7 +592,7 @@ mod tests {
         let board = load_object!(Board, "check_area_open-01");
         let pos = board.get_snakes()[0].get_head().get_up();
 
-        let result = board.check_area(pos, 0,5, &mut Vec::with_capacity(5));
+        let result = board.check_area(pos, 0,5, &mut Vec::with_capacity(5), 0);
 
         assert_eq!(result, 5);
     }
@@ -589,7 +602,7 @@ mod tests {
         let board = load_object!(Board, "check_area_route-01");
         let pos = board.get_snakes()[0].get_head().get_down();
 
-        let result = board.check_area(pos, 0, 10, &mut Vec::with_capacity(10));
+        let result = board.check_area(pos, 0, 10, &mut Vec::with_capacity(10), 0);
         
         assert_eq!(result, 10);
     }
