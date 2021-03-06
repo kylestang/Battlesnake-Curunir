@@ -6,10 +6,10 @@ pub const HEAD: &'static str = "evil";
 pub const TAIL: &'static str = "sharp";
 
 // Game constants
-pub const DIRECTIONS: usize = 4;
+pub const DIRECTIONS: usize = 3;
 pub const MAX_HEALTH: i32 = 100;
 pub const MAX_LEVEL: i32 = 5;
-pub const MAX_SEARCH: i32 = 20;
+pub const MAX_SEARCH: i32 = 30;
 pub const YOU_ID: i32 = 0;
 
 // Log settings

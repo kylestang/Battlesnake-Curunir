@@ -72,16 +72,18 @@ impl Board {
             return current_area;
         }
 
+        // Increment food counter
         if self.food.contains(&pos) {
             food_eaten += 1;
         }
 
         // Check for snake collisions, return max_area if I can tail chase
-        // TODO: implement food consideration
         for snake in &self.snakes {
             let body = snake.get_body();
+            // Iterate over snake body
             for i in 0..snake.get_length() {
                 if pos == body[i] {
+                    // If snake is me, subtract food from area. Return available area
                     if snake.get_id() == YOU_ID {
                         if snake.get_length() - i - 1 > current_area as usize - food_eaten {
                             return current_area;
@@ -281,11 +283,13 @@ impl Board {
         img.save(format!("{}{}.png", DRAW_PATH, file_name))
     }
 
-    // Returns the distance to the closest food to pos
+    // Returns the closest food to pos
     pub fn find_closest_food(&self, pos: Coordinate) -> Option<Coordinate> {
+        // If food exists
         if self.food.len() > 0 {
             let mut closest_distance = pos.distance_to(self.food[0]);
             let mut closest_food = self.food[0];
+            // Iterate over food
             for i in 1..self.food.len() {
                 let current_distance = pos.distance_to(self.food[i]);
                 if current_distance < closest_distance {
@@ -293,6 +297,7 @@ impl Board {
                     closest_food = self.food[i];
                 }
             }
+            // Return the closest food
             return Some(closest_food);
         } else {
             None
@@ -309,34 +314,40 @@ impl Board {
         None
     }
 
+    // Returns true if pos is against the board walls
     pub fn is_against_wall(&self, pos: Coordinate) -> bool {
         pos.get_x() == 0 || pos.get_x() == self.width - 1 || pos.get_y() == 0 || pos.get_y() == self.height - 1
     }
 
+    // Moves self down and predicts future turns
     pub fn check_down(&mut self, current_level: i32, max_level: i32) -> Board {
         let down = self.snakes[0].get_down();
         self.snakes[0].move_to(down);
         self.recursion_entry(current_level, max_level)
     }
 
+    // Moves self up and predicts future turns
     pub fn check_up(&mut self, current_level: i32, max_level: i32) -> Board {
         let up = self.snakes[0].get_up();
         self.snakes[0].move_to(up);
         self.recursion_entry(current_level, max_level)
     }
 
+    // Moves self right and predicts future turns
     pub fn check_right(&mut self, current_level: i32, max_level: i32) -> Board {
         let right = self.snakes[0].get_right();
         self.snakes[0].move_to(right);
         self.recursion_entry(current_level, max_level)
     }
 
+    // Moves self left and predicts future turns
     pub fn check_left(&mut self, current_level: i32, max_level: i32) -> Board {
         let left = self.snakes[0].get_left();
         self.snakes[0].move_to(left);
         self.recursion_entry(current_level, max_level)
     }
 
+    // First level of recursion, my snake has already moved
     fn recursion_entry(&mut self, current_level: i32, max_level: i32) -> Board {
         if DRAWING {
             self.draw(String::from("test")).unwrap();
@@ -348,7 +359,7 @@ impl Board {
         }
 
         let num_snakes = self.snakes.len();
-        let mut worst_outcomes: Vec<[i32; 4]> = vec![[-1; DIRECTIONS]; num_snakes - 1];
+        let mut worst_outcomes: Vec<[i32; DIRECTIONS]> = vec![[-1; DIRECTIONS]; num_snakes - 1];
         let mut outcomes = Vec::with_capacity(DIRECTIONS.pow(num_snakes as u32 - 1));
         let mut best_worst_outcomes = vec![0; num_snakes - 1];
 
@@ -359,7 +370,7 @@ impl Board {
             // Move each snake to new position on new Board
             for j in 0..num_snakes - 1 {
                 let snake = &mut new_board.get_snakes_mut()[j + 1];
-                let pos = snake.get_head().get_adjacent()[(i / DIRECTIONS.pow(j as u32)) % 4];
+                let pos = snake.get_options()[(i / DIRECTIONS.pow(j as u32)) % DIRECTIONS];
                 snake.move_to(pos);
             }
 
@@ -371,16 +382,18 @@ impl Board {
 
             // Update worst outcomes
             for j in 0..num_snakes - 1 {
-                let direction = (i / DIRECTIONS.pow(j as u32)) % 4;
+                let direction = (i / DIRECTIONS.pow(j as u32)) % DIRECTIONS;
                 let best_board = worst_outcomes[j][direction];
                 if best_board < 0 || current_board.compare_to(&outcomes[best_board as usize], self.snakes[j + 1].get_id()) == Less {
                     worst_outcomes[j][direction] = i as i32;
                 }
             }
 
+            // Store calculated board
             outcomes.push(current_board);
         }
 
+        // Find the best direction to move out of the calculated options
         for i in 0..num_snakes - 1 {
             for j in 1..DIRECTIONS {
                 let best_direction = worst_outcomes[i][best_worst_outcomes[i]] as usize;
@@ -395,11 +408,13 @@ impl Board {
             }
         }
 
+        // Find the board where each snake moves in its best direction
         let mut return_board = 0;
         for i in 0..num_snakes - 1 {
             return_board += best_worst_outcomes[i] * DIRECTIONS.pow(i as u32);
         }
 
+        // Return the best board
         outcomes.swap_remove(return_board)
     }
 
@@ -415,7 +430,7 @@ impl Board {
         }
 
         let num_snakes = self.snakes.len();
-        let mut worst_outcomes: Vec<[i32; 4]> = vec![[-1; DIRECTIONS]; num_snakes];
+        let mut worst_outcomes: Vec<[i32; DIRECTIONS]> = vec![[-1; DIRECTIONS]; num_snakes];
         let mut outcomes = Vec::with_capacity(DIRECTIONS.pow(num_snakes as u32));
         let mut best_worst_outcomes = vec![0; num_snakes];
 
@@ -426,7 +441,7 @@ impl Board {
             // Move each snake to new position on new Board
             for j in 0..num_snakes {
                 let snake = &mut new_board.get_snakes_mut()[j];
-                let pos = snake.get_head().get_adjacent()[(i / DIRECTIONS.pow(j as u32)) % 4];
+                let pos = snake.get_options()[(i / DIRECTIONS.pow(j as u32)) % DIRECTIONS];
                 snake.move_to(pos);
             }
 
@@ -437,16 +452,18 @@ impl Board {
 
             // Update worst outcomes
             for j in 0..num_snakes {
-                let direction = (i / DIRECTIONS.pow(j as u32)) % 4;
+                let direction = (i / DIRECTIONS.pow(j as u32)) % DIRECTIONS;
                 let best_board = worst_outcomes[j][direction];
                 if best_board < 0 || current_board.compare_to(&outcomes[best_board as usize], self.snakes[j].get_id()) == Less {
                     worst_outcomes[j][direction] = i as i32;
                 }
             }
 
+            // Store calculated board
             outcomes.push(current_board);
         }
 
+        // Find the best direction to move out of the calculated options
         for i in 0..num_snakes {
             for j in 1..DIRECTIONS {
                 let best_direction = worst_outcomes[i][best_worst_outcomes[i]] as usize;
@@ -461,11 +478,13 @@ impl Board {
             }
         }
 
+        // Find the board where each snake moves in its best direction
         let mut return_board = 0;
         for i in 0..num_snakes {
             return_board += best_worst_outcomes[i] * DIRECTIONS.pow(i as u32);
         }
 
+        // Return the best board
         outcomes.swap_remove(return_board)
     }
 

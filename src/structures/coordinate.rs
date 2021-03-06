@@ -26,7 +26,7 @@ impl Coordinate {
     }
 
     // Down, up, right, left
-    pub fn get_adjacent(&self) -> [Coordinate; DIRECTIONS] {
+    pub fn get_adjacent(&self) -> [Coordinate; DIRECTIONS + 1] {
         [
             self.get_down(),
             self.get_up(),
