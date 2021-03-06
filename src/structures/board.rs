@@ -296,6 +296,10 @@ impl Board {
         None
     }
 
+    pub fn is_against_wall(&self, pos: Coordinate) -> bool {
+        pos.get_x() == 0 || pos.get_x() == self.width - 1 || pos.get_y() == 0 || pos.get_y() == self.height - 1
+    }
+
     pub fn check_down(&mut self, current_level: i32, max_level: i32) -> Board {
         let down = self.snakes[0].get_down();
         self.snakes[0].move_to(down);
@@ -768,6 +772,25 @@ mod tests {
         let snake = board.get_snake(0);
 
         assert_eq!(snake.unwrap(), &board.get_snakes()[0]);
+    }
+
+    // is_against_wall()
+    #[test]
+    fn test_is_against_wall_false() {
+        let board = load_object!(Board, "against_wall_false-01");
+
+        let result = board.is_against_wall(Coordinate::new(3, 2));
+
+        assert_eq!(result, false);
+    }
+
+    #[test]
+    fn test_is_against_wall_true() {
+        let board = load_object!(Board, "against_wall_true-01");
+
+        let result = board.is_against_wall(Coordinate::new(0, 3));
+
+        assert_eq!(result, true);
     }
 
     // minimax()

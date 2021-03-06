@@ -123,6 +123,12 @@ impl Game {
         let closest_food = board.find_closest_food(current_pos);
         let food_exists = closest_food.is_some();
         let closest_food = closest_food.unwrap_or_default();
+
+        // Check if positions are against wall
+        let against_wall_down = board.is_against_wall(current_pos.get_down());
+        let against_wall_up = board.is_against_wall(current_pos.get_up());
+        let against_wall_right = board.is_against_wall(current_pos.get_right());
+        let against_wall_left = board.is_against_wall(current_pos.get_left());
     
         // Finish down thread
         let down_board = down_rx.recv().unwrap();
@@ -242,9 +248,76 @@ impl Game {
         && left_best {
             decision = 3;
             direction = String::from("left");
-        
-        // Move towards closest food with best move
+        }
+
+        // Move towards closest food with best move, avoiding wall
+        else if
+        down_survival
+        && can_escape_down
+        && down_best
+        && !against_wall_down
+        && food_exists && closest_food.get_y() < current_pos.get_y() {
+            decision = 4;
+            direction = String::from("down");
         } else if
+        up_survival
+        && can_escape_up
+        && up_best
+        && !against_wall_up
+        && food_exists && closest_food.get_y() > current_pos.get_y() {
+            decision = 5;
+            direction = String::from("up");
+        } else if
+        right_survival
+        && can_escape_right
+        && right_best
+        && !against_wall_right
+        && food_exists && closest_food.get_x() > current_pos.get_x() {
+            decision = 6;
+            direction = String::from("right");
+        } else if
+        left_survival
+        && can_escape_left
+        && left_best
+        && !against_wall_left
+        && food_exists && closest_food.get_x() < current_pos.get_x() {
+            decision = 7;
+            direction = String::from("left");
+        }
+
+        // Move towards escape with best move, avoiding walls
+        else if
+        down_survival
+        && can_escape_down
+        && down_best
+        && !against_wall_down {
+            decision = 8;
+            direction = String::from("down");
+        } else if 
+        up_survival
+        && can_escape_up
+        && up_best 
+        && !against_wall_up {
+            decision = 9;
+            direction = String::from("up");
+        } else if
+        right_survival
+        && can_escape_right
+        && right_best 
+        && !against_wall_right {
+            decision = 10;
+            direction = String::from("right");
+        } else if
+        left_survival
+        && can_escape_left
+        && left_best 
+        && !against_wall_left {
+            decision = 11;
+            direction = String::from("left");
+        }
+
+        // Move towards closest food with best move
+        else if
         down_survival
         && can_escape_down
         && down_best
