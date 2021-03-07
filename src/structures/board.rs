@@ -287,8 +287,8 @@ impl Board {
     pub fn find_closest_food(&self, pos: Coordinate) -> Option<Coordinate> {
         // If food exists
         if self.food.len() > 0 {
-            let mut closest_distance = pos.distance_to(self.food[0]);
             let mut closest_food = self.food[0];
+            let mut closest_distance = pos.distance_to(closest_food);
             // Iterate over food
             for i in 1..self.food.len() {
                 let current_distance = pos.distance_to(self.food[i]);
@@ -302,6 +302,29 @@ impl Board {
         } else {
             None
         }
+    }
+
+    // Returns closest snake that I am longer than by advantage, if it exists
+    // TODO: Make this only return true if it is advantage longer than ALL snakes
+    pub fn find_weaker_snake(&self, current_snake: &Battlesnake, advantage: i32) -> Option<Coordinate> {
+        let pos = current_snake.get_head();
+        let mut closest_head = None;
+        let mut closest_distance = i32::MAX;
+
+        // Iterate through all snakes
+        for snake in &self.snakes {
+            let current_distance = pos.distance_to(snake.get_head());
+            // Check if snake is short enough, closer, and not the same as current_snake
+            if snake.get_id() != current_snake.get_id()
+            && snake.get_length() as i32 <= current_snake.get_length() as i32 - advantage
+            && current_distance < closest_distance {
+                closest_distance = current_distance;
+                closest_head = Some(snake.get_head());
+            }
+        }
+
+        // Return closest head matching the criteria, or None
+        closest_head
     }
 
     // Returns the snake with id snake_id, or None
@@ -566,7 +589,7 @@ macro_rules! load_object {
     (Board, $filename:expr) => {
         {
             let file: std::fs::File = std::fs::OpenOptions::new()
-                .read(true).open(format!("{}{}.json", crate::constants::TEST_PATH, $filename)).unwrap();
+                .read(true).open(format!("{}{}.json", crate::constants::_TEST_PATH, $filename)).unwrap();
             let board: crate::move_request::MoveRequest = serde_json::from_reader(file).unwrap();
             let board = board.into_values();
             let board = board.2.into_board(board.3, 0);
@@ -576,7 +599,7 @@ macro_rules! load_object {
     (Battlesnake, $filename:expr) => {
         {
             let file: std::fs::File =std::fs::OpenOptions::new()
-                .read(true).open(format!("{}{}.json", crate::constants::TEST_PATH, $filename)).unwrap();
+                .read(true).open(format!("{}{}.json", crate::constants::_TEST_PATH, $filename)).unwrap();
             let snake: crate::input_snake::InputSnake = from_reader(file).unwrap();
             let snake = snake.into_battlesnake();
             snake
@@ -585,7 +608,7 @@ macro_rules! load_object {
     ($type:ident, $filename:expr) => {
         {
             let file: std::fs::File = std::fs::OpenOptions::new()
-                .read(true).open(format!("{}{}.json", crate::constants::TEST_PATH, $filename)).unwrap();
+                .read(true).open(format!("{}{}.json", crate::constants::_TEST_PATH, $filename)).unwrap();
             let object: $type = serde_json::from_reader(file).unwrap();
             object
         }
@@ -674,9 +697,9 @@ mod tests {
     // draw()
     #[test]
     fn test_draw() {
-        let board = load_object!(Board, "check_area_route-01");
+        let board = load_object!(Board, "find_weaker_snake_one-01");
 
-        let result = board.draw(String::from("check_area_route-01"));
+        let result = board.draw(String::from("find_weaker_snake_one-01"));
         
         assert_eq!(result.is_ok(), true);
     }
@@ -707,6 +730,27 @@ mod tests {
         let food = board.find_closest_food(board.get_snakes()[0].get_head());
 
         assert_eq!(food.unwrap(), Coordinate::new(0, 3));
+    }
+
+    // find_weaker_snake()
+    #[test]
+    fn test_find_weaker_snake_none() {
+        let board = load_object!(Board, "find_weaker_snake_none-01");
+        let snake = &board.get_snakes()[0];
+
+        let snake_head = board.find_weaker_snake(snake, 5);
+
+        assert_eq!(snake_head.is_none(), true);
+    }
+
+    #[test]
+    fn test_find_weaker_snake_one() {
+        let board = load_object!(Board, "find_weaker_snake_one-01");
+        let snake = &board.snakes[0];
+
+        let snake_head = board.find_weaker_snake(snake, 5);
+
+        assert_eq!(snake_head.unwrap(), board.snakes[1].get_head());
     }
 
     // game_step()
