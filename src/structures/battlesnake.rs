@@ -78,7 +78,7 @@ impl Battlesnake {
         // Reset health to full
         self.health = MAX_HEALTH;
         // Add piece to back of self
-        self.body.push_back(self.body.back().unwrap().clone());
+        self.body.push_back(*self.body.back().unwrap());
         // Increase length by 1
         self.length += 1;
     }

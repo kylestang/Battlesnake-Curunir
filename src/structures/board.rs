@@ -1,10 +1,9 @@
 use image::{ImageResult, Rgb, RgbImage};
-use std::convert::TryInto;
 
 use crate::battlesnake::Battlesnake;
 use crate::board_order::BoardOrder;
 use crate::board_order::BoardOrder::*;
-use crate::constants::{DIRECTIONS, DRAWING, DRAW_PATH, EYE_RATIO, FOOD_RATIO, PUPIL_RATIO, TILE_SIZE, YOU_ID};
+use crate::constants::{DIRECTIONS, DRAWING, DRAW_PATH, EYE_RATIO, FOOD_RATIO, LENGTH_ADVANTAGE, PUPIL_RATIO, TILE_SIZE, YOU_ID};
 use crate::coordinate::Coordinate;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -81,8 +80,8 @@ impl Board {
         for snake in &self.snakes {
             let body = snake.get_body();
             // Iterate over snake body
-            for i in 0..snake.get_length() {
-                if pos == body[i] {
+            for (i, tile) in body.iter().enumerate() {
+                if pos == *tile {
                     // If snake is me, subtract food from area. Return available area
                     if snake.get_id() == YOU_ID {
                         if snake.get_length() - i - 1 > current_area as usize - food_eaten {
@@ -90,14 +89,11 @@ impl Board {
                         } else {
                             return max_area;
                         }
+                    } else if snake.get_length() - i - 1 > current_area as usize {
+                        return current_area;
                     } else {
-                        if snake.get_length() - i - 1 > current_area as usize {
-                            return current_area;
-                        } else {
-                            return max_area;
-                        }
+                        return max_area;
                     }
-                    
                 }
             }
         }
@@ -154,6 +150,27 @@ impl Board {
             if self_length > other_length {
                 return Greater;
             } else if self_length < other_length {
+                return Less;
+            }
+
+            // Board where self is closer to weak snakes is better
+            let self_weak_head = self.find_weaker_snake(self_snake, LENGTH_ADVANTAGE);
+            let other_weak_head = other.find_weaker_snake(other_snake, LENGTH_ADVANTAGE);
+            if self_weak_head.is_some() && other_weak_head.is_some() {
+                let self_weak_head = self_weak_head.unwrap();
+                let other_weak_head = other_weak_head.unwrap();
+
+                let self_distance = self_weak_head.distance_to(self_snake.get_head());
+                let other_distance = other_weak_head.distance_to(other_snake.get_head());
+
+                if self_distance < other_distance {
+                    return Greater;
+                } else if self_distance > other_distance {
+                    return Less;
+                }
+            } else if self_weak_head.is_some() && other_weak_head.is_none() {
+                return Greater;
+            } else if self_weak_head.is_none() && other_weak_head.is_some() {
                 return Less;
             }
 
@@ -240,13 +257,13 @@ impl Board {
         // Draw snakes
         for snake in &self.snakes {
 
-            let r1: u8 = (((snake.get_id() * 90) % 255) as u8).try_into().unwrap();
-            let g1: u8 = (((snake.get_id() * 150) % 255) as u8).try_into().unwrap();
-            let b1: u8 = (((snake.get_id() * 210) % 255) as u8).try_into().unwrap();
+            let r1: u8 = ((snake.get_id() * 90) % 255) as u8;
+            let g1: u8 = ((snake.get_id() * 150) % 255) as u8;
+            let b1: u8 = ((snake.get_id() * 210) % 255) as u8;
 
-            let r2: u8 = ((((snake.get_id() + 100) * 90) % 255) as u8).try_into().unwrap();
-            let g2: u8 = ((((snake.get_id() + 176) * 150) % 255) as u8).try_into().unwrap();
-            let b2: u8 = ((((snake.get_id() + 095) * 210) % 255) as u8).try_into().unwrap();
+            let r2: u8 = (((snake.get_id() + 100) * 90) % 255) as u8;
+            let g2: u8 = (((snake.get_id() + 176) * 150) % 255) as u8;
+            let b2: u8 = (((snake.get_id() + 95) * 210) % 255) as u8;
 
             for tile in snake.get_body() {
                 if !(tile.get_x() < 0 || tile.get_x() > self.width - 1 || tile.get_y() < 0 || tile.get_y() > self.height - 1) {
@@ -286,7 +303,7 @@ impl Board {
     // Returns the closest food to pos
     pub fn find_closest_food(&self, pos: Coordinate) -> Option<Coordinate> {
         // If food exists
-        if self.food.len() > 0 {
+        if !self.food.is_empty() {
             let mut closest_food = self.food[0];
             let mut closest_distance = pos.distance_to(closest_food);
             // Iterate over food
@@ -298,7 +315,7 @@ impl Board {
                 }
             }
             // Return the closest food
-            return Some(closest_food);
+            Some(closest_food)
         } else {
             None
         }
@@ -377,7 +394,7 @@ impl Board {
         }
 
         // End case. Return is self is dead or current_level >= max_level
-        if current_level >= max_level || self.snakes.len() <= 0 || self.snakes[0].get_id() != YOU_ID {
+        if current_level >= max_level || self.snakes.is_empty() || self.snakes[0].get_id() != YOU_ID {
             return self.clone();
         }
 
@@ -404,11 +421,11 @@ impl Board {
             
 
             // Update worst outcomes
-            for j in 0..num_snakes - 1 {
+            for (j, snake) in worst_outcomes.iter_mut().enumerate() {
                 let direction = (i / DIRECTIONS.pow(j as u32)) % DIRECTIONS;
-                let best_board = worst_outcomes[j][direction];
+                let best_board = snake[direction];
                 if best_board < 0 || current_board.compare_to(&outcomes[best_board as usize], self.snakes[j + 1].get_id()) == Less {
-                    worst_outcomes[j][direction] = i as i32;
+                    snake[direction] = i as i32;
                 }
             }
 
@@ -433,8 +450,8 @@ impl Board {
 
         // Find the board where each snake moves in its best direction
         let mut return_board = 0;
-        for i in 0..num_snakes - 1 {
-            return_board += best_worst_outcomes[i] * DIRECTIONS.pow(i as u32);
+        for (i, direction) in best_worst_outcomes.iter().enumerate() {
+            return_board += direction * DIRECTIONS.pow(i as u32);
         }
 
         // Return the best board
@@ -448,7 +465,7 @@ impl Board {
         }
 
         // End case. Return is self is dead or current_level >= max_level
-        if current_level >= max_level || self.snakes.len() <= 0 || self.snakes[0].get_id() != YOU_ID {
+        if current_level >= max_level || self.snakes.is_empty() || self.snakes[0].get_id() != YOU_ID {
             return self.clone();
         }
 
@@ -474,11 +491,11 @@ impl Board {
             let current_board = new_board.minimax(current_level + 1, max_level);
 
             // Update worst outcomes
-            for j in 0..num_snakes {
+            for (j, snake) in worst_outcomes.iter_mut().enumerate() {
                 let direction = (i / DIRECTIONS.pow(j as u32)) % DIRECTIONS;
-                let best_board = worst_outcomes[j][direction];
+                let best_board = snake[direction];
                 if best_board < 0 || current_board.compare_to(&outcomes[best_board as usize], self.snakes[j].get_id()) == Less {
-                    worst_outcomes[j][direction] = i as i32;
+                    snake[direction] = i as i32;
                 }
             }
 
@@ -503,8 +520,8 @@ impl Board {
 
         // Find the board where each snake moves in its best direction
         let mut return_board = 0;
-        for i in 0..num_snakes {
-            return_board += best_worst_outcomes[i] * DIRECTIONS.pow(i as u32);
+        for (i, direction) in best_worst_outcomes.iter().enumerate() {
+            return_board += direction * DIRECTIONS.pow(i as u32);
         }
 
         // Return the best board

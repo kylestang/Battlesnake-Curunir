@@ -8,6 +8,10 @@ repository = "https://github.com/kylestang/battlesnake-curunir"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+[profile.release]
+lto = true
+codegen-units = 1
+
 [dependencies]
 actix-web = "3"
 actix-rt = "1.1.1"
