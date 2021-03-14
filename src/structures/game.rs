@@ -607,3 +607,21 @@ board.get_turn(), direction, decision, will_kill, MAX_LEVEL, down_turn, up_turn,
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::load_object;
+    use crate::move_request::MoveRequest;
+
+    #[test]
+    fn test_decision() {
+        let data = load_object!(MoveRequest, String::from("test_board-03"));
+        
+        let values = data.into_values();
+        let board = values.2.into_board(values.3, values.1);
+        let game = values.0;
+        let direction = game.decision(board);
+
+        assert_eq!(direction, String::from("right"));
+    }
+}

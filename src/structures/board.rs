@@ -143,15 +143,6 @@ impl Board {
         if self_snake.is_some() && other_snake.is_some() {
             let self_snake = self_snake.unwrap();
             let other_snake = other_snake.unwrap();
-            
-            // Board where self is longer is better
-            let self_length = self_snake.get_length();
-            let other_length = other_snake.get_length();
-            if self_length > other_length {
-                return Greater;
-            } else if self_length < other_length {
-                return Less;
-            }
 
             // Board where self is closer to weak snakes is better
             let self_weak_head = self.find_weaker_snake(self_snake, LENGTH_ADVANTAGE);
@@ -171,6 +162,15 @@ impl Board {
             } else if self_weak_head.is_some() && other_weak_head.is_none() {
                 return Greater;
             } else if self_weak_head.is_none() && other_weak_head.is_some() {
+                return Less;
+            }
+            
+            // Board where self is longer is better
+            let self_length = self_snake.get_length();
+            let other_length = other_snake.get_length();
+            if self_length > other_length {
+                return Greater;
+            } else if self_length < other_length {
                 return Less;
             }
 
@@ -668,6 +668,17 @@ mod tests {
 
     // compare_to
     #[test]
+    fn test_compare_to_advantage() {
+        let better_board = load_object!(Board, "compare_to_advantage-01-better");
+        let worse_board = load_object!(Board, "compare_to_advantage-01-worse");
+
+        let true_result = better_board.compare_to(&worse_board, 0);
+        let false_result = worse_board.compare_to(&better_board, 0);
+
+        assert_eq!(true_result == Greater && false_result == Less, true);
+    }
+
+    #[test]
     fn test_compare_to_alive() {
         let better_board = load_object!(Board, "better_than_alive-01-dead");
         let worse_board = load_object!(Board, "better_than_alive-01-alive");
@@ -714,9 +725,9 @@ mod tests {
     // draw()
     #[test]
     fn test_draw() {
-        let board = load_object!(Board, "find_weaker_snake_one-01");
+        let board = load_object!(Board, "test_board-03");
 
-        let result = board.draw(String::from("find_weaker_snake_one-01"));
+        let result = board.draw(String::from("test_board-03"));
         
         assert_eq!(result.is_ok(), true);
     }
@@ -889,7 +900,7 @@ mod tests {
     // minimax()
     #[test]
     fn test_minimax() {
-        let mut board = load_object!(Board, "test_board-01");
+        let mut board = load_object!(Board, "test_board-03");
 
         let result = board.minimax(0, 6);
         result.draw(String::from("test")).unwrap();
