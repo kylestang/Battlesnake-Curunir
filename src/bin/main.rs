@@ -3,22 +3,18 @@ use index_response::IndexResponse;
 use move_request::MoveRequest;
 use move_response::MoveResponse;
 
-use crate::requests::*;
-use crate::structures::*;
-
-mod constants;
-mod requests;
-mod structures;
+use curunir::requests::*;
+use curunir::constants::*;
 
 // Index response
 #[get("/battlesnake/curunir")]
 async fn index() -> HttpResponse {
     HttpResponse::Ok().json(IndexResponse::new(
-        constants::API_VERSION,
-        constants::AUTHOR,
-        constants::COLOR,
-        constants::HEAD,
-        constants::TAIL
+        API_VERSION,
+        AUTHOR,
+        COLOR,
+        HEAD,
+        TAIL
     ))
 }
 
@@ -72,7 +68,35 @@ mod tests {
 
     use actix_web::test;
 
-    use crate::load_object;
+    macro_rules! load_object {
+        (Board, $filename:expr) => {
+            {
+                let file: std::fs::File = std::fs::OpenOptions::new()
+                    .read(true).open(format!("{}{}.json", curunir::constants::_TEST_PATH, $filename)).unwrap();
+                let board: crate::move_request::MoveRequest = serde_json::from_reader(file).unwrap();
+                let board = board.into_values();
+                let board = board.2.into_board(board.3, 0);
+                board
+            }
+        };
+        (Battlesnake, $filename:expr) => {
+            {
+                let file: std::fs::File =std::fs::OpenOptions::new()
+                    .read(true).open(format!("{}{}.json", curunir::constants::_TEST_PATH, $filename)).unwrap();
+                let snake: crate::input_snake::InputSnake = from_reader(file).unwrap();
+                let snake = snake.into_battlesnake();
+                snake
+            }
+        };
+        ($type:ident, $filename:expr) => {
+            {
+                let file: std::fs::File = std::fs::OpenOptions::new()
+                    .read(true).open(format!("{}{}.json", curunir::constants::_TEST_PATH, $filename)).unwrap();
+                let object: $type = serde_json::from_reader(file).unwrap();
+                object
+            }
+        };
+    }
 
     #[actix_rt::test]
     async fn test_index_get() {

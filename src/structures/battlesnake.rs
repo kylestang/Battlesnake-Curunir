@@ -1,6 +1,6 @@
 use std::collections::VecDeque;
 
-use crate::constants::{DIRECTIONS, MAX_HEALTH};
+use crate::constants::MAX_HEALTH;
 use crate::coordinate::Coordinate;
 
 // Define the Battlesnake struct
@@ -65,12 +65,7 @@ impl Battlesnake {
 
     // Returns true if self has collided with the body of other
     pub fn body_collision_with(&self, other: &Battlesnake) -> bool {
-        for i in 1..other.get_length() {
-            if self.head == other.get_body()[i] {
-                return true;
-            }
-        }
-        false
+        other.get_body().range(1..).any(|tile| self.head == *tile)
     }
 
     // Eat food and update snake
@@ -84,24 +79,41 @@ impl Battlesnake {
     }
 
     // Return all tiles adjacent to head other than body[1]
-    pub fn get_options(&self) -> Vec<Coordinate> {
-        let mut options = Vec::with_capacity(DIRECTIONS);
+    pub fn get_option(&self, direction: usize) -> Coordinate {
         let second = self.body[1];
+        let result;
 
-        if self.get_down() != second {
-            options.push(self.get_down());
-        }
-        if self.get_up() != second {
-            options.push(self.get_up());
-        }
-        if self.get_right() != second {
-            options.push(self.get_right());
-        }
-        if self.get_left() != second {
-            options.push(self.get_left());
+        if second == self.get_down() {
+            result = match direction {
+                0 => self.get_up(),
+                1 => self.get_right(),
+                2 => self.get_left(),
+                _ => panic!("Wrong direction")
+            };
+        } else if second == self.get_up() {
+            result = match direction {
+                0 => self.get_down(),
+                1 => self.get_right(),
+                2 => self.get_left(),
+                _ => panic!("Wrong direction")
+            }
+        } else if second == self.get_right() {
+            result = match direction {
+                0 => self.get_down(),
+                1 => self.get_up(),
+                2 => self.get_left(),
+                _ => panic!("Wrong direction")
+            }
+        } else {
+            result = match direction {
+                0 => self.get_down(),
+                1 => self.get_up(),
+                2 => self.get_right(),
+                _ => panic!("Wrong direction")
+            }
         }
 
-        options
+        result
     }
 
     // Returns true if self lost head-to-head against other

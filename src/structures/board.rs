@@ -105,7 +105,7 @@ impl Board {
         let mut largest_area = 0;
         for tile in &pos.get_adjacent() {
             // Discard paths of alternate routes, keep paths used to get here
-            gone.resize_with(current_area as usize, Default::default);
+            gone.truncate(current_area as usize);
             let new_area = self.check_area(*tile, current_area, max_area, gone, food_eaten);
             if new_area >= max_area {
                 return new_area;
@@ -322,7 +322,6 @@ impl Board {
     }
 
     // Returns closest snake that I am longer than by advantage, if it exists
-    // TODO: Make this only return true if it is advantage longer than ALL snakes
     pub fn find_weaker_snake(&self, current_snake: &Battlesnake, advantage: i32) -> Option<Coordinate> {
         let pos = current_snake.get_head();
         let mut closest_head = None;
@@ -330,14 +329,17 @@ impl Board {
 
         // Iterate through all snakes
         for snake in &self.snakes {
-            let current_distance = pos.distance_to(snake.get_head());
             // Check if snake is short enough, closer, and not the same as current_snake
-            if snake.get_id() != current_snake.get_id()
-            && snake.get_length() as i32 <= current_snake.get_length() as i32 - advantage
-            && current_distance < closest_distance {
-                closest_distance = current_distance;
-                closest_head = Some(snake.get_head());
+            if snake.get_id() != current_snake.get_id() {
+                let current_distance = pos.distance_to(snake.get_head());
+                if snake.get_length() as i32 <= current_snake.get_length() as i32 - advantage && current_distance < closest_distance {
+                    closest_distance = current_distance;
+                    closest_head = Some(snake.get_head());
+                } else {
+                    return None;
+                }
             }
+            
         }
 
         // Return closest head matching the criteria, or None
@@ -410,7 +412,7 @@ impl Board {
             // Move each snake to new position on new Board
             for j in 0..num_snakes - 1 {
                 let snake = &mut new_board.get_snakes_mut()[j + 1];
-                let pos = snake.get_options()[(i / DIRECTIONS.pow(j as u32)) % DIRECTIONS];
+                let pos = snake.get_option((i / DIRECTIONS.pow(j as u32)) % DIRECTIONS);
                 snake.move_to(pos);
             }
 
@@ -459,14 +461,14 @@ impl Board {
     }
 
     // Recursive minimax to find score of position
-    pub fn minimax(&mut self, current_level: i32, max_level: i32) -> Board {
+    pub fn minimax(self, current_level: i32, max_level: i32) -> Board {
         if DRAWING {
             self.draw(String::from("test")).unwrap();
         }
 
-        // End case. Return is self is dead or current_level >= max_level
+        // End case. Return if self is dead or current_level >= max_level
         if current_level >= max_level || self.snakes.is_empty() || self.snakes[0].get_id() != YOU_ID {
-            return self.clone();
+            return self;
         }
 
         let num_snakes = self.snakes.len();
@@ -481,7 +483,7 @@ impl Board {
             // Move each snake to new position on new Board
             for j in 0..num_snakes {
                 let snake = &mut new_board.get_snakes_mut()[j];
-                let pos = snake.get_options()[(i / DIRECTIONS.pow(j as u32)) % DIRECTIONS];
+                let pos = snake.get_option((i / DIRECTIONS.pow(j as u32)) % DIRECTIONS);
                 snake.move_to(pos);
             }
 
@@ -528,7 +530,7 @@ impl Board {
         outcomes.swap_remove(return_board)
     }
 
-    fn game_step(&mut self) {
+    pub fn game_step(&mut self) {
         // Check all food
         let mut i = 0;
         while i < self.food.len() {
@@ -573,29 +575,18 @@ impl Board {
             }
         }
 
-        // TODO break out of outer loop if snake has been eliminated
         // Check for collisions
         let mut to_remove = Vec::with_capacity(self.snakes.len());
         for snake in &self.snakes {
             for other_snake in &self.snakes {
                 if snake.lost_headon(other_snake) || snake.body_collision_with(other_snake) {
                     to_remove.push(snake.get_id());
+                    break;
                 }
             }
         }
 
-        // Eliminate collided snakes
-        for snake_id in to_remove {
-            let mut i = 0;
-            while i < self.snakes.len() {
-                if self.snakes[i].get_id() == snake_id {
-                    self.snakes.remove(i);
-                    break;
-                } else {
-                    i += 1;
-                }
-            }
-        }
+        self.snakes.retain(|snake| !to_remove.contains(&snake.get_id()));
 
         self.turn += 1;
     }
@@ -725,9 +716,9 @@ mod tests {
     // draw()
     #[test]
     fn test_draw() {
-        let board = load_object!(Board, "test_board-03");
+        let board = load_object!(Board, "food-01");
 
-        let result = board.draw(String::from("test_board-03"));
+        let result = board.draw(String::from("food-01"));
         
         assert_eq!(result.is_ok(), true);
     }
@@ -900,7 +891,7 @@ mod tests {
     // minimax()
     #[test]
     fn test_minimax() {
-        let mut board = load_object!(Board, "test_board-03");
+        let board = load_object!(Board, "test_board-03");
 
         let result = board.minimax(0, 6);
         result.draw(String::from("test")).unwrap();
