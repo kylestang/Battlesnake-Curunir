@@ -7,7 +7,7 @@ use std::thread::spawn;
 
 use crate::board::Board;
 use crate::board_order::BoardOrder::*;
-use crate::constants::{LENGTH_ADVANTAGE, LOGGING, LOG_PATH, MAX_SEARCH, MAX_LEVEL, YOU_ID};
+use crate::constants::{EXPONENT, LENGTH_ADVANTAGE, LOGGING, LOG_PATH, MAX_SEARCH, YOU_ID};
 use crate::ruleset::Ruleset;
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -36,12 +36,15 @@ impl Game {
 
     // Returns the direction to go based on the game board
     pub fn decision(&self, board: Board) -> String {
+        // Calculate max recursion depth
+        let max_depth = max(EXPONENT / board.get_snakes().len() as i32, 1);
+
         // Predict future turns
         // Create a thread for down
         let mut down_board = board.clone();
         let (down_tx, down_rx) = mpsc::channel();
         let down_handle = spawn(move || {
-            let down = down_board.check_down(0, MAX_LEVEL);
+            let down = down_board.check_down(0, max_depth);
             down_tx.send(down).unwrap();
         });
     
@@ -49,7 +52,7 @@ impl Game {
         let mut up_board = board.clone();
         let (up_tx, up_rx) = mpsc::channel();
         let up_handle = spawn(move || {
-            let up = up_board.check_up(0, MAX_LEVEL);
+            let up = up_board.check_up(0, max_depth);
             up_tx.send(up).unwrap();
         });
     
@@ -57,7 +60,7 @@ impl Game {
         let mut right_board = board.clone();
         let (right_tx, right_rx) = mpsc::channel();
         let right_handle = spawn(move || {
-            let right = right_board.check_right(0, MAX_LEVEL);
+            let right = right_board.check_right(0, max_depth);
             right_tx.send(right).unwrap();
         });
     
@@ -65,7 +68,7 @@ impl Game {
         let mut left_board = board.clone();
         let (left_tx, left_rx) = mpsc::channel();
         let left_handle = spawn(move || {
-            let left = left_board.check_left(0, MAX_LEVEL);
+            let left = left_board.check_left(0, max_depth);
             left_tx.send(left).unwrap();
         });
 
@@ -585,7 +588,7 @@ right turns: {}
     up area: {}
  right area: {}
   left area: {}",
-board.get_turn(), direction, decision, will_kill, MAX_LEVEL, down_turn, up_turn, right_turn, left_turn, max_search, down_area, up_area, right_area, left_area)
+board.get_turn(), direction, decision, will_kill, max_depth, down_turn, up_turn, right_turn, left_turn, max_search, down_area, up_area, right_area, left_area)
 );
     
         // Return direction

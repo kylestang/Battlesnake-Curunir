@@ -144,6 +144,15 @@ impl Board {
             let self_snake = self_snake.unwrap();
             let other_snake = other_snake.unwrap();
 
+            // Board where self is not trapped is better
+            let self_open_directions = self.open_directions(self_snake);
+            let other_open_directions = other.open_directions(other_snake);
+            if self_open_directions >= 2 && other_open_directions < 2 {
+                return Greater;
+            } else if other_open_directions >= 2 && self_open_directions < 2 {
+                return Less;
+            }
+
             // Board where self is closer to weak snakes is better
             let self_weak_head = self.find_weaker_snake(self_snake, LENGTH_ADVANTAGE);
             let other_weak_head = other.find_weaker_snake(other_snake, LENGTH_ADVANTAGE);
@@ -192,6 +201,13 @@ impl Board {
             } else if self_closest_food.is_some() && other_closest_food.is_none() {
                 return Greater;
             } else if self_closest_food.is_none() && other_closest_food.is_some() {
+                return Less;
+            }
+
+            // Board where self has greater mobility is better
+            if self_open_directions > other_open_directions {
+                return Greater;
+            } else if other_open_directions > self_open_directions {
                 return Less;
             }
         }
@@ -590,6 +606,34 @@ impl Board {
 
         self.turn += 1;
     }
+
+    pub fn open_directions(&self, snake: &Battlesnake) -> i32 {
+        let mut options = DIRECTIONS as i32 + 1;
+        let pos = snake.get_head();
+
+        for snake in &self.snakes {
+            for tile in snake.get_body().range(..snake.get_length() - 1) {
+                if *tile == pos.get_down() || *tile == pos.get_up() || *tile == pos.get_left() || *tile == pos.get_right() {
+                    options -= 1;
+                }
+            }
+        }
+
+        if pos.get_x() == 0 {
+            options -= 1;
+        }
+        if pos.get_x() == self.width - 1 {
+            options -= 1;
+        }
+        if pos.get_y() == 0 {
+            options -= 1;
+        }
+        if pos.get_y() == self.height - 1 {
+            options -= 1;
+        }
+
+        options
+    }
 }
 
 #[macro_export]
@@ -897,5 +941,22 @@ mod tests {
         result.draw(String::from("test")).unwrap();
 
         assert_eq!(true, true);
+    }
+
+    // open_directions()
+    #[test]
+    fn test_open_directions_2() {
+        let board = load_object!(Board, "open_directions_2-01");
+        let snake = &board.get_snakes()[0];
+
+        assert_eq!(board.open_directions(snake), 2);
+    }
+
+    #[test]
+    fn test_open_directions_3() {
+        let board = load_object!(Board, "open_directions_3-01");
+        let snake = &board.get_snakes()[0];
+
+        assert_eq!(board.open_directions(snake), 3);
     }
 }

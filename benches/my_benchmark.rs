@@ -2,6 +2,8 @@ use criterion::{black_box, criterion_group, criterion_main, Criterion};
 use curunir::requests::*;
 use curunir::constants::*;
 
+use std::cmp::max;
+
 macro_rules! load_object {
     (Board, $filename:expr) => {
         {
@@ -58,10 +60,24 @@ pub fn game_step_bench(c: &mut Criterion) {
 pub fn minimax_bench(c: &mut Criterion) {
     let board = black_box(load_object!(Board, "test_board-03"));
     let current = black_box(0);
-    let max_level = black_box(MAX_LEVEL);
+    let max_depth = black_box(max(EXPONENT / board.get_snakes().len() as i32, 1));
 
-    c.bench_function("minimax", |b| b.iter(|| board.clone().minimax(current, max_level)));
+    c.bench_function("minimax", |b| b.iter(|| board.clone().minimax(current, max_depth)));
 }
 
-criterion_group!(benches, body_collision_with_bench, get_option_bench, game_step_bench, minimax_bench);
+pub fn open_directions_bench(c: &mut Criterion) {
+    let board = black_box(load_object!(Board, "food-01"));
+    let snake = black_box(&board.get_snakes()[0]);
+
+    c.bench_function("open_directions", |b| b.iter(|| board.open_directions(snake)));
+}
+
+criterion_group!(benches, 
+    body_collision_with_bench,
+    get_option_bench,
+    game_step_bench,
+    minimax_bench,
+    open_directions_bench
+);
+
 criterion_main!(benches);
