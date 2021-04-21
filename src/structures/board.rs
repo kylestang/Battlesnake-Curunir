@@ -1,4 +1,5 @@
 use image::{ImageResult, Rgb, RgbImage};
+use std::cmp::{max, min};
 
 use crate::battlesnake::Battlesnake;
 use crate::board_order::BoardOrder;
@@ -316,6 +317,46 @@ impl Board {
         img.save(format!("{}{}.png", DRAW_PATH, file_name))
     }
 
+    pub fn evaluate(&self) -> Vec<(i32, u64)> {
+        let mut result = Vec::with_capacity(self.snakes.len());
+        for snake in &self.snakes {
+            let mut score: u64 = 0;
+
+            // digit 0
+            let open_directions = self.open_directions(&snake) as u64;
+            score += open_directions;
+
+            // digits 1,2
+            let closest_food = self.find_closest_food(snake.get_head());
+            if let Some(food_pos) = closest_food {
+                let value = max(0, 100 - snake.get_head().distance_to(food_pos));
+                score += 10 * value as u64;
+            }
+
+            // digits 3,4,5
+            score += 1_000 * min(999, snake.get_length() as u64);
+
+            // digits 6,7
+            let weak_head = self.find_weaker_snake(&snake, LENGTH_ADVANTAGE);
+            if let Some(head_pos) = weak_head {
+                let value = max(0, 100 - snake.get_head().distance_to(head_pos));
+                score += 1_000_000 * value as u64;
+            }
+
+            // digit 8
+            if open_directions >= 2 {
+                score += 100_000_000
+            }
+
+            // digits 9, 10
+            score += 1_000_000_000 * max(0, 100 - self.snakes.len()) as u64;
+
+            result.push((snake.get_id(), score));
+        }
+
+        result
+    }
+
     // Returns the closest food to pos
     pub fn find_closest_food(&self, pos: Coordinate) -> Option<Coordinate> {
         // If food exists
@@ -477,20 +518,19 @@ impl Board {
     }
 
     // Recursive minimax to find score of position
-    pub fn minimax(self, current_level: i32, max_level: i32) -> Board {
+    pub fn minimax(self, current_level: i32, max_level: i32) -> Vec<(i32, u64)> {
         if DRAWING {
             self.draw(String::from("test")).unwrap();
         }
 
         // End case. Return if self is dead or current_level >= max_level
         if current_level >= max_level || self.snakes.is_empty() || self.snakes[0].get_id() != YOU_ID {
-            return self;
+            return self.evaluate();
         }
 
         let num_snakes = self.snakes.len();
-        let mut worst_outcomes: Vec<[i32; DIRECTIONS]> = vec![[-1; DIRECTIONS]; num_snakes];
-        let mut outcomes = Vec::with_capacity(DIRECTIONS.pow(num_snakes as u32));
-        let mut best_worst_outcomes = vec![0; num_snakes];
+        let mut worst_boards: Vec<[i32; DIRECTIONS]> = vec![[-1; DIRECTIONS]; num_snakes];
+        let mut result_boards = Vec::with_capacity(DIRECTIONS.pow(num_snakes as u32));
 
         // Iterate through all possible boards
         for i in 0..DIRECTIONS.pow(num_snakes as u32) {
@@ -506,15 +546,31 @@ impl Board {
             new_board.game_step();
 
             // Get the maximin result from this position
-            let current_board = new_board.minimax(current_level + 1, max_level);
+            let result = new_board.minimax(current_level + 1, max_level);
 
             // Update worst outcomes
-            for (j, snake) in worst_outcomes.iter_mut().enumerate() {
+            let current_evaluation = 0;
+            for (j, snake) in worst_boards.iter_mut().enumerate() {
                 let direction = (i / DIRECTIONS.pow(j as u32)) % DIRECTIONS;
                 let best_board = snake[direction];
                 if best_board < 0 || current_board.compare_to(&outcomes[best_board as usize], self.snakes[j].get_id()) == Less {
                     snake[direction] = i as i32;
                 }
+            }
+
+            for (j, snake_boards) in worst_boards.iter_mut().enumerate() {
+                let direction = (i / DIRECTIONS.pow(j as u32)) % DIRECTIONS;
+
+                let current_worst = snake_boards[direction];
+                let snake_result;
+                if result[current_evaluation].0 == self.snakes[j].get_id() {
+                    snake_result = result[current_evaluation].1;
+                    current_evaluation += 1;
+                } else {
+                    snake_result = 0;
+                }
+
+                if result_boards[]
             }
 
             // Store calculated board
@@ -938,7 +994,7 @@ mod tests {
         let board = load_object!(Board, "test_board-03");
 
         let result = board.minimax(0, 6);
-        result.draw(String::from("test")).unwrap();
+        //let image_result = result.draw(String::from("test"));
 
         assert_eq!(true, true);
     }
