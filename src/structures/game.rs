@@ -623,6 +623,6 @@ mod tests {
         let game = values.0;
         let direction = game.decision(board);
 
-        assert_eq!(direction, String::from("up"));
+        assert_eq!(direction, String::from("right"));
     }
 }
