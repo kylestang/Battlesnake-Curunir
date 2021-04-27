@@ -23,7 +23,7 @@ impl InputSnake {
     }
 
     // Convert self to a Battlesnake struct
-    pub fn into_battlesnake(self, id: i32) -> Battlesnake {
+    pub fn into_battlesnake(self, id: u8) -> Battlesnake {
         Battlesnake::new(
             id,
             self.health,

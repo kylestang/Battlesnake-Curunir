@@ -28,7 +28,7 @@ impl InputBoard {
         for i in 0..num_snakes {
             let snake = self.snakes.pop().unwrap();
             if snake.get_id() != &you_id {
-                snakes.push(snake.into_battlesnake(i as i32 + 1));
+                snakes.push(snake.into_battlesnake(i as u8 + 1));
             }
         }
 
@@ -39,6 +39,7 @@ impl InputBoard {
             self.food,
             self.hazards,
             snakes,
+            num_snakes as u8,
             turn
         )
     }

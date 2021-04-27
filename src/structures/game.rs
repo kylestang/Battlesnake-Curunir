@@ -6,7 +6,6 @@ use std::sync::mpsc;
 use std::thread::spawn;
 
 use crate::board::Board;
-use crate::board_order::BoardOrder::*;
 use crate::constants::{EXPONENT, LENGTH_ADVANTAGE, LOGGING, LOG_PATH, MAX_SEARCH, YOU_ID};
 use crate::ruleset::Ruleset;
 
@@ -141,7 +140,7 @@ impl Game {
         let food_down = board.get_food().contains(&down_pos);
         let food_up = board.get_food().contains(&up_pos);
         let food_right = board.get_food().contains(&right_pos);
-        let food_left = board   .get_food().contains(&left_pos);
+        let food_left = board.get_food().contains(&left_pos);
 
         // Check if positions are against wall
         let against_wall_down = board.is_against_wall(down_pos);
@@ -168,28 +167,27 @@ impl Game {
         // Find the best directions
         let mut best_boards = Vec::with_capacity(4);
         best_boards.push(&down_board);
+
+        let you_index = YOU_ID as usize;
     
-        let up_comp = up_board.compare_to(best_boards[0], YOU_ID);
-        if up_comp == Greater {
+        if up_board[you_index] > best_boards[0][you_index] {
             best_boards.clear();
             best_boards.push(&up_board);
-        } else if up_comp == Equal {
+        } else if up_board[you_index] == best_boards[0][you_index] {
             best_boards.push(&up_board);
         }
         
-        let right_comp = right_board.compare_to(best_boards[0], YOU_ID);
-        if right_comp == Greater {
+        if right_board[you_index] > best_boards[0][you_index] {
             best_boards.clear();
             best_boards.push(&right_board);
-        } else if right_comp == Equal {
+        } else if right_board[you_index] == best_boards[0][you_index] {
             best_boards.push(&right_board);
         }
         
-        let left_comp = left_board.compare_to(best_boards[0], YOU_ID);
-        if left_comp == Greater {
+        if left_board[you_index] > best_boards[0][you_index] {
             best_boards.clear();
             best_boards.push(&left_board);
-        } else if left_comp == Equal {
+        } else if left_board[you_index] == best_boards[0][you_index] {
             best_boards.push(&left_board);
         }
 
@@ -200,20 +198,20 @@ impl Game {
         let left_best = best_boards.contains(&&left_board);
 
         // True if I can survive
-        let down_survival = down_board.get_snake(YOU_ID).is_some();
-        let up_survival = up_board.get_snake(YOU_ID).is_some();
-        let right_survival = right_board.get_snake(YOU_ID).is_some();
-        let left_survival = left_board.get_snake(YOU_ID).is_some();
+        let down_survival = down_board[you_index] > 0;
+        let up_survival = up_board[you_index] > 0;
+        let right_survival = right_board[you_index] > 0;
+        let left_survival = left_board[you_index] > 0;
 
         // True if other snakes will die
-        let will_kill = best_boards[0].get_snakes().len() < board.get_snakes().len();
+        let will_kill = 100 - ((best_boards[0][you_index] / 1_000_000_000) % 100) < board.get_snakes().len() as u64;
 
-        // Find max survival time
+        /*// Find max survival time
         let down_turn = down_board.get_turn();
         let up_turn = up_board.get_turn();
         let right_turn = right_board.get_turn();
         let left_turn = left_board.get_turn();
-        // let max_turns = max(max(down_turn, up_turn), max(right_turn, left_turn));
+        // let max_turns = max(max(down_turn, up_turn), max(right_turn, left_turn));*/
 
         // Finish down_area thread
         let down_area = down_area_rx.recv().unwrap();
@@ -588,7 +586,7 @@ right turns: {}
     up area: {}
  right area: {}
   left area: {}",
-board.get_turn(), direction, decision, will_kill, max_depth, down_turn, up_turn, right_turn, left_turn, max_search, down_area, up_area, right_area, left_area)
+board.get_turn(), direction, decision, will_kill, max_depth, -1, -1, -1, -1, max_search, down_area, up_area, right_area, left_area)
 );
     
         // Return direction
@@ -625,6 +623,6 @@ mod tests {
         let game = values.0;
         let direction = game.decision(board);
 
-        assert_eq!(direction, String::from("right"));
+        assert_eq!(direction, String::from("up"));
     }
 }

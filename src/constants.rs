@@ -11,7 +11,7 @@ pub const EXPONENT: i32 = 12;
 pub const LENGTH_ADVANTAGE: i32 = 5;
 pub const MAX_HEALTH: i32 = 100;
 pub const MAX_SEARCH: i32 = 30;
-pub const YOU_ID: i32 = 0;
+pub const YOU_ID: u8 = 0;
 
 // Log settings
 pub const LOGGING: bool = true;
