@@ -25,10 +25,11 @@ impl InputBoard {
         let you_id = you.get_id().clone();
         snakes.push(you.into_battlesnake(YOU_ID));
         // Push all the other snakes as Battlesnakes onto the snakes vector
-        for i in 0..num_snakes {
-            let snake = self.snakes.pop().unwrap();
+        let mut snake_id = 1;
+        while let Some(snake) = self.snakes.pop() {
             if snake.get_id() != &you_id {
-                snakes.push(snake.into_battlesnake(i as u8 + 1));
+                snakes.push(snake.into_battlesnake(snake_id));
+                snake_id += 1;
             }
         }
 
