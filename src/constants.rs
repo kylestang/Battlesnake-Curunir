@@ -24,4 +24,4 @@ pub const DRAW_PATH: &str = "drawings/";
 pub const EYE_RATIO: f32 = 5.0;
 pub const FOOD_RATIO: f32 = 2.5;
 pub const PUPIL_RATIO: f32 = 10.0;
-pub const TILE_SIZE: u32 = 10;
+pub const TILE_SIZE: u32 = 30;
