@@ -616,13 +616,13 @@ mod tests {
 
     #[test]
     fn test_decision() {
-        let data = load_object!(MoveRequest, String::from("test_board-03"));
+        let data = load_object!(MoveRequest, String::from("test_board-04"));
         
         let values = data.into_values();
         let board = values.2.into_board(values.3, values.1);
         let game = values.0;
         let direction = game.decision(board);
 
-        assert_eq!(direction, String::from("right"));
+        assert_eq!(direction, String::from("left"));
     }
 }

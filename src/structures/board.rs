@@ -219,7 +219,7 @@ impl Board {
     }
 
     pub fn evaluate(&self) -> Vec<u64> {
-        let mut result = Vec::with_capacity(16);
+        let mut result = Vec::with_capacity(self.max_snakes as usize);
         let mut current_snake = 0;
 
         for i in 0..self.max_snakes {
@@ -404,9 +404,9 @@ impl Board {
             for (j, snake_boards) in worst_boards.iter_mut().enumerate() {
                 let direction = (i / DIRECTIONS.pow(j as u32)) % DIRECTIONS;
                 let current_worst = snake_boards[direction];
-                let id = self.snakes[j + 1].get_id();
+                let id = self.snakes[j + 1].get_id() as usize;
 
-                if current_worst == -1 || result[id as usize] < result_boards[current_worst as usize][j] {
+                if current_worst == -1 || result[id] < result_boards[current_worst as usize][id] {
                     snake_boards[direction] = i as i32;
                 }
             }
@@ -424,10 +424,11 @@ impl Board {
         // Iterate over the worst boards for each snake
         for (i, snake_boards) in worst_boards.iter().enumerate() {
             let mut best_direction = 0;
+            let id = self.snakes[i + 1].get_id() as usize;
 
             // Find the best of the worst directions
             for j in 1..DIRECTIONS {
-                if result_boards[snake_boards[j] as usize][i + 1] > result_boards[snake_boards[best_direction] as usize][i + 1] {
+                if result_boards[snake_boards[j] as usize][id] > result_boards[snake_boards[best_direction] as usize][id] {
                     best_direction = j;
                 }
             }
@@ -483,9 +484,9 @@ impl Board {
             for (j, snake_boards) in worst_boards.iter_mut().enumerate() {
                 let direction = (i / DIRECTIONS.pow(j as u32)) % DIRECTIONS;
                 let current_worst = snake_boards[direction];
-                let id = self.snakes[j].get_id();
+                let id = self.snakes[j].get_id() as usize;
                 
-                if current_worst == -1 || result[id as usize] < result_boards[current_worst as usize][j] {
+                if current_worst == -1 || result[id] < result_boards[current_worst as usize][id] {
                     snake_boards[direction] = i as i32;
                 }
             }
@@ -503,10 +504,11 @@ impl Board {
         // Iterate over the worst boards for each snake
         for (i, snake_boards) in worst_boards.iter().enumerate() {
             let mut best_direction = 0;
+            let id = self.snakes[i].get_id() as usize;
 
             // Find the best of the worst directions
             for j in 1..DIRECTIONS {
-                if result_boards[snake_boards[j] as usize][i] > result_boards[snake_boards[best_direction] as usize][i] {
+                if result_boards[snake_boards[j] as usize][id] > result_boards[snake_boards[best_direction] as usize][id] {
                     best_direction = j;
                 }
             }
@@ -734,9 +736,9 @@ mod tests {
     // draw()
     #[test]
     fn test_draw() {
-        let board = load_object!(Board, "food-01");
+        let board = load_object!(Board, "test_board-04");
 
-        let result = board.draw(String::from("food-01"));
+        let result = board.draw(String::from("test_board-04"));
         
         assert_eq!(result.is_ok(), true);
     }
