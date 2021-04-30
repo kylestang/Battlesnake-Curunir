@@ -362,7 +362,7 @@ impl Board {
         }
 
         // End case. Return if self is dead or current_level >= max_level
-        if current_level >= max_level || self.snakes.is_empty() || self.snakes[0].get_id() != YOU_ID {
+        if current_level >= max_level || self.snakes.is_empty() {
             return self.evaluate();
         }
 
@@ -447,7 +447,7 @@ impl Board {
         }
 
         // End case. Return if self is dead or current_level >= max_level
-        if current_level >= max_level || self.snakes.is_empty() || self.snakes[0].get_id() != YOU_ID {
+        if current_level >= max_level || self.snakes.is_empty() {
             return self.evaluate();
         }
 

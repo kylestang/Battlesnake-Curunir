@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use std::cmp::{max, min};
+use std::cmp::{max, min, Ordering};
 use std::fs::{File, OpenOptions};
 use std::io::Write;
 use std::sync::mpsc;
@@ -169,26 +169,32 @@ impl Game {
         best_boards.push(&down_board);
 
         let you_index = YOU_ID as usize;
-    
-        if up_board[you_index] > best_boards[0][you_index] {
-            best_boards.clear();
-            best_boards.push(&up_board);
-        } else if up_board[you_index] == best_boards[0][you_index] {
-            best_boards.push(&up_board);
+
+        match up_board[you_index].cmp(&best_boards[0][you_index]) {
+            Ordering::Greater => {
+                best_boards.clear();
+                best_boards.push(&up_board);
+            },
+            Ordering::Equal => best_boards.push(&up_board),
+            Ordering::Less => {}
         }
-        
-        if right_board[you_index] > best_boards[0][you_index] {
-            best_boards.clear();
-            best_boards.push(&right_board);
-        } else if right_board[you_index] == best_boards[0][you_index] {
-            best_boards.push(&right_board);
+
+        match right_board[you_index].cmp(&best_boards[0][you_index]) {
+            Ordering::Greater => {
+                best_boards.clear();
+                best_boards.push(&right_board);
+            },
+            Ordering::Equal => best_boards.push(&right_board),
+            Ordering::Less => {}
         }
-        
-        if left_board[you_index] > best_boards[0][you_index] {
-            best_boards.clear();
-            best_boards.push(&left_board);
-        } else if left_board[you_index] == best_boards[0][you_index] {
-            best_boards.push(&left_board);
+
+        match left_board[you_index].cmp(&best_boards[0][you_index]) {
+            Ordering::Greater => {
+                best_boards.clear();
+                best_boards.push(&left_board);
+            },
+            Ordering::Equal => best_boards.push(&left_board),
+            Ordering::Less => {}
         }
 
         // Store best directions
@@ -572,22 +578,35 @@ impl Game {
 
         // Log decision        
         self.log_data(format!("
-       turn: {}
-  direction: {}
-   decision: {}
-  will kill: {}
-  max turns: {}
- down turns: {}
-   up turns: {}
-right turns: {}
- left turns: {}
-   max area: {}
-  down area: {}
-    up area: {}
- right area: {}
-  left area: {}",
-board.get_turn(), direction, decision, will_kill, max_depth, -1, -1, -1, -1, max_search, down_area, up_area, right_area, left_area)
-);
+        turn: {}
+   direction: {}
+    decision: {}
+   will kill: {}
+   max turns: {}
+ down result: {}
+   up result: {}
+right result: {}
+ left result: {}
+    max area: {}
+   down area: {}
+     up area: {}
+  right area: {}
+   left area: {}",
+            board.get_turn(),
+            direction,
+            decision,
+            will_kill,
+            max_depth,
+            down_board[you_index],
+            up_board[you_index],
+            right_board[you_index],
+            left_board[you_index],
+            max_search,
+            down_area,
+            up_area,
+            right_area,
+            left_area)
+        );
     
         // Return direction
         direction

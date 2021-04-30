@@ -145,7 +145,7 @@ mod tests {
         let snake1 = &board.get_snakes()[0];
         let snake2 = &board.get_snakes()[1];
 
-        assert_eq!(snake2.body_collision_with(snake1), true);
+        assert!(snake2.body_collision_with(snake1));
     }
 
     #[test]
@@ -154,7 +154,7 @@ mod tests {
         let snake1 = &board.get_snakes()[0];
         let snake2 = &board.get_snakes()[1];
         
-        assert_eq!(snake1.body_collision_with(snake2), false);
+        assert!(!snake1.body_collision_with(snake2));
     }
 
     // eat_food
@@ -177,7 +177,7 @@ mod tests {
         let snake1 = &board.get_snakes()[0];
         let snake2 = &board.get_snakes()[1];
 
-        assert_eq!(snake2.lost_headon(snake1), true);
+        assert!(snake2.lost_headon(snake1));
     }
 
     #[test]
@@ -186,7 +186,7 @@ mod tests {
         let snake1 = &board.get_snakes()[0];
         let snake2 = &board.get_snakes()[1];
 
-        assert_eq!(snake1.lost_headon(snake2), false);
+        assert!(!snake1.lost_headon(snake2));
     }
 
     #[test]
@@ -195,7 +195,7 @@ mod tests {
         let snake1 = &board.get_snakes()[0];
         let snake2 = &board.get_snakes()[1];
 
-        assert_eq!(snake1.lost_headon(snake2), false);
+        assert!(!snake1.lost_headon(snake2));
     }
 
     // move_to

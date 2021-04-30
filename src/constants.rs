@@ -7,7 +7,7 @@ pub const TAIL: &str = "sharp";
 
 // Game constants
 pub const DIRECTIONS: usize = 3;
-pub const EXPONENT: i32 = 12;
+pub const EXPONENT: i32 = 13;
 pub const LENGTH_ADVANTAGE: i32 = 5;
 pub const MAX_HEALTH: i32 = 100;
 pub const MAX_SEARCH: i32 = 30;
