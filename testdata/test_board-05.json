@@ -1,0 +1,299 @@
+{
+    "game": {
+        "id": "1ec9c09d-661f-45cf-9613-590fed872f3b",
+        "ruleset": {
+            "name": "standard",
+            "version": "v.1.2.3"
+        },
+        "timeout": 500
+    },
+    "turn": 0,
+    "board": {
+        "width": 11,
+        "height": 11,
+        "food": [
+            {
+                "x": 4,
+                "y": 8
+            },
+            {
+                "x": 8,
+                "y": 0
+            },
+            {
+                "x": 2,
+                "y": 8
+            },
+            {
+                "x": 8,
+                "y": 4
+            },
+            {
+                "x": 6,
+                "y": 2
+            },
+            {
+                "x": 8,
+                "y": 10
+            },
+            {
+                "x": 2,
+                "y": 2
+            },
+            {
+                "x": 2,
+                "y": 6
+            },
+            {
+                "x": 5,
+                "y": 5
+            }
+        ],
+        "hazards": [],
+        "snakes": [
+            {
+                "id": "gs_bmkTDmMmwCtbYfWDVHPxJBCf",
+                "name": "Keep Away",
+                "body": [
+                    {
+                        "x": 5,
+                        "y": 9
+                    },
+                    {
+                        "x": 5,
+                        "y": 9
+                    },
+                    {
+                        "x": 5,
+                        "y": 9
+                    }
+                ],
+                "health": 100,
+                "latency": "0",
+                "head": {
+                    "x": 5,
+                    "y": 9
+                },
+                "length": 3,
+                "shout": "",
+                "squad": ""
+            },
+            {
+                "id": "gs_B9FPKHxDJ8d7Vmr3JFSRSxwJ",
+                "name": "Snakey the Snake's Friend",
+                "body": [
+                    {
+                        "x": 9,
+                        "y": 1
+                    },
+                    {
+                        "x": 9,
+                        "y": 1
+                    },
+                    {
+                        "x": 9,
+                        "y": 1
+                    }
+                ],
+                "health": 100,
+                "latency": "0",
+                "head": {
+                    "x": 9,
+                    "y": 1
+                },
+                "length": 3,
+                "shout": "",
+                "squad": ""
+            },
+            {
+                "id": "gs_Kb7JpHJFQWhFFQySv8SVQ8QY",
+                "name": "FirstCollabSnake",
+                "body": [
+                    {
+                        "x": 1,
+                        "y": 9
+                    },
+                    {
+                        "x": 1,
+                        "y": 9
+                    },
+                    {
+                        "x": 1,
+                        "y": 9
+                    }
+                ],
+                "health": 100,
+                "latency": "0",
+                "head": {
+                    "x": 1,
+                    "y": 9
+                },
+                "length": 3,
+                "shout": "",
+                "squad": ""
+            },
+            {
+                "id": "gs_VvrMwQKrCqdXJvBVhPBWgwXY",
+                "name": "Sneeky Snek",
+                "body": [
+                    {
+                        "x": 9,
+                        "y": 5
+                    },
+                    {
+                        "x": 9,
+                        "y": 5
+                    },
+                    {
+                        "x": 9,
+                        "y": 5
+                    }
+                ],
+                "health": 100,
+                "latency": "0",
+                "head": {
+                    "x": 9,
+                    "y": 5
+                },
+                "length": 3,
+                "shout": "",
+                "squad": ""
+            },
+            {
+                "id": "gs_t3GvVHSd78dMmCVgQBTFDXrW",
+                "name": "Linguicinha",
+                "body": [
+                    {
+                        "x": 5,
+                        "y": 1
+                    },
+                    {
+                        "x": 5,
+                        "y": 1
+                    },
+                    {
+                        "x": 5,
+                        "y": 1
+                    }
+                ],
+                "health": 100,
+                "latency": "0",
+                "head": {
+                    "x": 5,
+                    "y": 1
+                },
+                "length": 3,
+                "shout": "",
+                "squad": ""
+            },
+            {
+                "id": "gs_kbFtrCBb3wyfxy3qRvGQWrdc",
+                "name": "Nessegrev",
+                "body": [
+                    {
+                        "x": 9,
+                        "y": 9
+                    },
+                    {
+                        "x": 9,
+                        "y": 9
+                    },
+                    {
+                        "x": 9,
+                        "y": 9
+                    }
+                ],
+                "health": 100,
+                "latency": "0",
+                "head": {
+                    "x": 9,
+                    "y": 9
+                },
+                "length": 3,
+                "shout": "",
+                "squad": ""
+            },
+            {
+                "id": "gs_hqDMPPhyR3kYhytBmPHD84j8",
+                "name": "Anna",
+                "body": [
+                    {
+                        "x": 1,
+                        "y": 1
+                    },
+                    {
+                        "x": 1,
+                        "y": 1
+                    },
+                    {
+                        "x": 1,
+                        "y": 1
+                    }
+                ],
+                "health": 100,
+                "latency": "0",
+                "head": {
+                    "x": 1,
+                    "y": 1
+                },
+                "length": 3,
+                "shout": "",
+                "squad": ""
+            },
+            {
+                "id": "gs_J8SdvctybT6vqR7tFMGjYpQF",
+                "name": "Hissin-Bastid",
+                "body": [
+                    {
+                        "x": 1,
+                        "y": 5
+                    },
+                    {
+                        "x": 1,
+                        "y": 5
+                    },
+                    {
+                        "x": 1,
+                        "y": 5
+                    }
+                ],
+                "health": 100,
+                "latency": "0",
+                "head": {
+                    "x": 1,
+                    "y": 5
+                },
+                "length": 3,
+                "shout": "",
+                "squad": ""
+            }
+        ]
+    },
+    "you": {
+        "id": "gs_kbFtrCBb3wyfxy3qRvGQWrdc",
+        "name": "Nessegrev",
+        "body": [
+            {
+                "x": 9,
+                "y": 9
+            },
+            {
+                "x": 9,
+                "y": 9
+            },
+            {
+                "x": 9,
+                "y": 9
+            }
+        ],
+        "health": 100,
+        "latency": "0",
+        "head": {
+            "x": 9,
+            "y": 9
+        },
+        "length": 3,
+        "shout": "",
+        "squad": ""
+    }
+}
