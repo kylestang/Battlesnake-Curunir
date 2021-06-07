@@ -17,7 +17,6 @@ pub struct InputSnake {
 }
 
 impl InputSnake {
-
     pub fn get_id(&self) -> &String {
         &self.id
     }
@@ -30,7 +29,7 @@ impl InputSnake {
             VecDeque::from(self.body),
             self.latency.parse().unwrap_or(0),
             self.head,
-            self.length
+            self.length,
         )
     }
 }

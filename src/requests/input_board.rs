@@ -11,11 +11,10 @@ pub struct InputBoard {
     width: i32,
     food: Vec<Coordinate>,
     hazards: Vec<Coordinate>,
-    snakes: Vec<InputSnake>
+    snakes: Vec<InputSnake>,
 }
 
 impl InputBoard {
-
     // Convert self to a Board struct
     pub fn into_board(mut self, you: InputSnake, turn: i32) -> Board {
         let num_snakes = self.snakes.len();
@@ -41,7 +40,7 @@ impl InputBoard {
             self.hazards,
             snakes,
             num_snakes as u8,
-            turn
+            turn,
         )
     }
 }

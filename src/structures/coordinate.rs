@@ -1,15 +1,15 @@
-use serde::{Deserialize, Serialize};
 use crate::constants::DIRECTIONS;
+use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Copy, Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
 pub struct Coordinate {
     x: i32,
-    y: i32
+    y: i32,
 }
 
 impl Coordinate {
     pub fn new(x: i32, y: i32) -> Coordinate {
-        Coordinate {x, y}
+        Coordinate { x, y }
     }
 
     pub fn get_x(&self) -> i32 {
@@ -31,7 +31,7 @@ impl Coordinate {
             self.get_down(),
             self.get_up(),
             self.get_right(),
-            self.get_left()
+            self.get_left(),
         ]
     }
 

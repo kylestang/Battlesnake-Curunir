@@ -1,7 +1,6 @@
-
-pub mod structures;
-pub mod requests;
 pub mod constants;
+pub mod requests;
+pub mod structures;
 
-use structures::*;
 use requests::*;
+use structures::*;

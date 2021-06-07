@@ -11,16 +11,27 @@ pub struct Battlesnake {
     body: VecDeque<Coordinate>,
     latency: i32,
     head: Coordinate,
-    length: usize
+    length: usize,
 }
 
 impl Battlesnake {
     // Battlesnake constructor
     pub fn new(
-        id: u8, health: i32, body: VecDeque<Coordinate>, latency: i32,
-        head: Coordinate, length: usize
+        id: u8,
+        health: i32,
+        body: VecDeque<Coordinate>,
+        latency: i32,
+        head: Coordinate,
+        length: usize,
     ) -> Battlesnake {
-        Battlesnake {id, health, body, latency, head, length}
+        Battlesnake {
+            id,
+            health,
+            body,
+            latency,
+            head,
+            length,
+        }
     }
 
     pub fn get_id(&self) -> u8 {
@@ -88,28 +99,28 @@ impl Battlesnake {
                 0 => self.get_up(),
                 1 => self.get_right(),
                 2 => self.get_left(),
-                _ => panic!("Wrong direction")
+                _ => panic!("Wrong direction"),
             };
         } else if second == self.get_up() {
             result = match direction {
                 0 => self.get_down(),
                 1 => self.get_right(),
                 2 => self.get_left(),
-                _ => panic!("Wrong direction")
+                _ => panic!("Wrong direction"),
             }
         } else if second == self.get_right() {
             result = match direction {
                 0 => self.get_down(),
                 1 => self.get_up(),
                 2 => self.get_left(),
-                _ => panic!("Wrong direction")
+                _ => panic!("Wrong direction"),
             }
         } else {
             result = match direction {
                 0 => self.get_down(),
                 1 => self.get_up(),
                 2 => self.get_right(),
-                _ => panic!("Wrong direction")
+                _ => panic!("Wrong direction"),
             }
         }
 
@@ -118,7 +129,9 @@ impl Battlesnake {
 
     // Returns true if self lost head-to-head against other
     pub fn lost_headon(&self, other: &Battlesnake) -> bool {
-        self.id != other.get_id() && self.head == other.get_head() && self.length <= other.get_length()
+        self.id != other.get_id()
+            && self.head == other.get_head()
+            && self.length <= other.get_length()
     }
 
     // Move self to position pos
@@ -153,7 +166,7 @@ mod tests {
         let board = load_object!(Board, "body_collision-01-before");
         let snake1 = &board.get_snakes()[0];
         let snake2 = &board.get_snakes()[1];
-        
+
         assert!(!snake1.body_collision_with(snake2));
     }
 
@@ -166,7 +179,7 @@ mod tests {
         let after_eat = &after_board.get_snakes()[0];
 
         before_eat.eat_food();
-        
+
         assert_eq!(before_eat, after_eat);
     }
 
@@ -205,7 +218,7 @@ mod tests {
         let after_board = load_object!(Board, "move-01-after");
         let before_move = &mut before_board.get_snakes_mut()[0];
         let after_move = &after_board.get_snakes()[0];
-        
+
         let destination = crate::coordinate::Coordinate::new(2, 3);
         before_move.move_to(destination);
 

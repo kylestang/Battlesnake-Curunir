@@ -3,19 +3,13 @@ use index_response::IndexResponse;
 use move_request::MoveRequest;
 use move_response::MoveResponse;
 
-use curunir::requests::*;
 use curunir::constants::*;
+use curunir::requests::*;
 
 // Index response
 #[get("/battlesnake/curunir")]
 async fn index() -> HttpResponse {
-    HttpResponse::Ok().json(IndexResponse::new(
-        API_VERSION,
-        AUTHOR,
-        COLOR,
-        HEAD,
-        TAIL
-    ))
+    HttpResponse::Ok().json(IndexResponse::new(API_VERSION, AUTHOR, COLOR, HEAD, TAIL))
 }
 
 // Game start
@@ -69,39 +63,53 @@ mod tests {
     use actix_web::test;
 
     macro_rules! load_object {
-        (Board, $filename:expr) => {
-            {
-                let file: std::fs::File = std::fs::OpenOptions::new()
-                    .read(true).open(format!("{}{}.json", curunir::constants::_TEST_PATH, $filename)).unwrap();
-                let board: crate::move_request::MoveRequest = serde_json::from_reader(file).unwrap();
-                let board = board.into_values();
-                let board = board.2.into_board(board.3, 0);
-                board
-            }
-        };
-        (Battlesnake, $filename:expr) => {
-            {
-                let file: std::fs::File =std::fs::OpenOptions::new()
-                    .read(true).open(format!("{}{}.json", curunir::constants::_TEST_PATH, $filename)).unwrap();
-                let snake: crate::input_snake::InputSnake = from_reader(file).unwrap();
-                let snake = snake.into_battlesnake();
-                snake
-            }
-        };
-        ($type:ident, $filename:expr) => {
-            {
-                let file: std::fs::File = std::fs::OpenOptions::new()
-                    .read(true).open(format!("{}{}.json", curunir::constants::_TEST_PATH, $filename)).unwrap();
-                let object: $type = serde_json::from_reader(file).unwrap();
-                object
-            }
-        };
+        (Board, $filename:expr) => {{
+            let file: std::fs::File = std::fs::OpenOptions::new()
+                .read(true)
+                .open(format!(
+                    "{}{}.json",
+                    curunir::constants::_TEST_PATH,
+                    $filename
+                ))
+                .unwrap();
+            let board: crate::move_request::MoveRequest = serde_json::from_reader(file).unwrap();
+            let board = board.into_values();
+            let board = board.2.into_board(board.3, 0);
+            board
+        }};
+        (Battlesnake, $filename:expr) => {{
+            let file: std::fs::File = std::fs::OpenOptions::new()
+                .read(true)
+                .open(format!(
+                    "{}{}.json",
+                    curunir::constants::_TEST_PATH,
+                    $filename
+                ))
+                .unwrap();
+            let snake: crate::input_snake::InputSnake = from_reader(file).unwrap();
+            let snake = snake.into_battlesnake();
+            snake
+        }};
+        ($type:ident, $filename:expr) => {{
+            let file: std::fs::File = std::fs::OpenOptions::new()
+                .read(true)
+                .open(format!(
+                    "{}{}.json",
+                    curunir::constants::_TEST_PATH,
+                    $filename
+                ))
+                .unwrap();
+            let object: $type = serde_json::from_reader(file).unwrap();
+            object
+        }};
     }
 
     #[actix_rt::test]
     async fn test_index_get() {
         let mut app = test::init_service(App::new().service(index)).await;
-        let req = test::TestRequest::with_header("content-type", "text/plain").uri("/battlesnake/curunir").to_request();
+        let req = test::TestRequest::with_header("content-type", "text/plain")
+            .uri("/battlesnake/curunir")
+            .to_request();
         let resp = test::call_service(&mut app, req).await;
         println!("{}", resp.status());
         assert!(resp.status().is_success());
@@ -112,7 +120,10 @@ mod tests {
         let data = load_object!(MoveRequest, "simple-02");
 
         let mut app = test::init_service(App::new().service(game_move)).await;
-        let req = test::TestRequest::post().set_json(&data).uri("/battlesnake/curunir/move").to_request();
+        let req = test::TestRequest::post()
+            .set_json(&data)
+            .uri("/battlesnake/curunir/move")
+            .to_request();
         println!("{}", req.path());
         let resp = test::call_service(&mut app, req).await;
         println!("{}", resp.status());

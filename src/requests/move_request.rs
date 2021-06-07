@@ -9,21 +9,21 @@ pub struct MoveRequest {
     game: Game,
     turn: i32,
     board: InputBoard,
-    you: InputSnake
+    you: InputSnake,
 }
 
 impl MoveRequest {
     pub fn _new(game: Game, turn: i32, board: InputBoard, you: InputSnake) -> MoveRequest {
-        MoveRequest {game, turn, board, you}
+        MoveRequest {
+            game,
+            turn,
+            board,
+            you,
+        }
     }
 
     // Break up self and return it's values
     pub fn into_values(self) -> (Game, i32, InputBoard, InputSnake) {
-        (
-            self.game,
-            self.turn,
-            self.board,
-            self.you
-        )
+        (self.game, self.turn, self.board, self.you)
     }
 }

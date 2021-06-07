@@ -2,7 +2,10 @@ use image::{ImageResult, Rgb, RgbImage};
 use std::cmp::{max, min};
 
 use crate::battlesnake::Battlesnake;
-use crate::constants::{DIRECTIONS, DRAWING, DRAW_PATH, EYE_RATIO, FOOD_RATIO, LENGTH_ADVANTAGE, PUPIL_RATIO, TILE_SIZE, YOU_ID};
+use crate::constants::{
+    DIRECTIONS, DRAWING, DRAW_PATH, EYE_RATIO, FOOD_RATIO, LENGTH_ADVANTAGE, PUPIL_RATIO,
+    TILE_SIZE, YOU_ID,
+};
 use crate::coordinate::Coordinate;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -13,12 +16,28 @@ pub struct Board {
     hazards: Vec<Coordinate>,
     snakes: Vec<Battlesnake>,
     max_snakes: u8,
-    turn: i32
+    turn: i32,
 }
 
 impl Board {
-    pub fn new(height: i32, width: i32, food: Vec<Coordinate>, hazards: Vec<Coordinate>, snakes: Vec<Battlesnake>, max_snakes: u8, turn: i32) -> Board {
-        Board {height, width, food, hazards, snakes, max_snakes, turn}
+    pub fn new(
+        height: i32,
+        width: i32,
+        food: Vec<Coordinate>,
+        hazards: Vec<Coordinate>,
+        snakes: Vec<Battlesnake>,
+        max_snakes: u8,
+        turn: i32,
+    ) -> Board {
+        Board {
+            height,
+            width,
+            food,
+            hazards,
+            snakes,
+            max_snakes,
+            turn,
+        }
     }
 
     pub fn _get_height(&self) -> i32 {
@@ -50,18 +69,24 @@ impl Board {
     }
 
     // Find the longest possible route a snake can travel from the current position
-    pub fn check_area(&self, pos: Coordinate, mut current_area: i32, max_area: i32, gone: &mut Vec<Coordinate>, mut food_eaten: usize) -> i32 {
-
+    pub fn check_area(
+        &self,
+        pos: Coordinate,
+        mut current_area: i32,
+        max_area: i32,
+        gone: &mut Vec<Coordinate>,
+        mut food_eaten: usize,
+    ) -> i32 {
         // Reached end of search, return
         if current_area >= max_area {
             return current_area;
         }
 
         // Check out of bounds
-        if pos.get_x() < 0 
-        || pos.get_x() > self.width - 1 
-        || pos.get_y() < 0 
-        || pos.get_y() > self.height - 1 
+        if pos.get_x() < 0
+            || pos.get_x() > self.width - 1
+            || pos.get_y() < 0
+            || pos.get_y() > self.height - 1
         {
             return current_area;
         }
@@ -119,19 +144,16 @@ impl Board {
     }
 
     pub fn draw(&self, file_name: String) -> ImageResult<()> {
-
         let imgx = TILE_SIZE * self.width as u32;
         let imgy = TILE_SIZE * self.height as u32;
 
         let mut img = RgbImage::new(imgx, imgy);
 
-        for x in 0..self.width as u32{
+        for x in 0..self.width as u32 {
             for y in 0..self.height as u32 {
-
                 // Fill in grid
                 for tile_x in 0..TILE_SIZE {
                     for tile_y in 0..TILE_SIZE {
-
                         let r: u8;
                         let g: u8;
                         let b: u8;
@@ -140,8 +162,7 @@ impl Board {
                             b = 100;
                             g = 0;
                             r = 0;
-                        }
-                        else {
+                        } else {
                             b = 255;
                             g = 255;
                             r = 255;
@@ -160,8 +181,10 @@ impl Board {
         for food in &self.food {
             for tile_x in 0..TILE_SIZE {
                 for tile_y in 0..TILE_SIZE {
-
-                    let radius = (((tile_x as i32 - TILE_SIZE as i32 / 2).pow(2) + (tile_y as i32 - TILE_SIZE as i32 / 2).pow(2)) as f32).sqrt();
+                    let radius = (((tile_x as i32 - TILE_SIZE as i32 / 2).pow(2)
+                        + (tile_y as i32 - TILE_SIZE as i32 / 2).pow(2))
+                        as f32)
+                        .sqrt();
                     let x_pixel = food.get_x() as u32 * TILE_SIZE + tile_x;
                     let y_pixel = imgy - (food.get_y() as u32 * TILE_SIZE + tile_y) - 1;
 
@@ -174,7 +197,6 @@ impl Board {
 
         // Draw snakes
         for snake in &self.snakes {
-
             let r1: u8 = ((snake.get_id() as u32 * 90) % 255) as u8;
             let g1: u8 = ((snake.get_id() as u32 * 150) % 255) as u8;
             let b1: u8 = ((snake.get_id() as u32 * 210) % 255) as u8;
@@ -184,20 +206,30 @@ impl Board {
             let b2: u8 = (((snake.get_id() as u32 + 95) * 210) % 255) as u8;
 
             for tile in snake.get_body() {
-                if !(tile.get_x() < 0 || tile.get_x() > self.width - 1 || tile.get_y() < 0 || tile.get_y() > self.height - 1) {
+                if !(tile.get_x() < 0
+                    || tile.get_x() > self.width - 1
+                    || tile.get_y() < 0
+                    || tile.get_y() > self.height - 1)
+                {
                     if *tile == snake.get_head() {
                         let eye_radius = TILE_SIZE as f32 / EYE_RATIO;
                         let pupil_radius = TILE_SIZE as f32 / PUPIL_RATIO;
 
                         for tile_x in 1..TILE_SIZE {
                             for tile_y in 1..TILE_SIZE {
-
-                                let radius = (((tile_x as i32 - TILE_SIZE as i32 / 2).pow(2) + (tile_y as i32 - TILE_SIZE as i32 / 2).pow(2)) as f32).sqrt();
+                                let radius = (((tile_x as i32 - TILE_SIZE as i32 / 2).pow(2)
+                                    + (tile_y as i32 - TILE_SIZE as i32 / 2).pow(2))
+                                    as f32)
+                                    .sqrt();
                                 let x_pixel = tile.get_x() as u32 * TILE_SIZE + tile_x;
                                 let y_pixel = imgy - (tile.get_y() as u32 * TILE_SIZE + tile_y) - 1;
-                                
+
                                 if radius > eye_radius {
-                                    img.put_pixel(x_pixel as u32, y_pixel as u32, Rgb([r1, g1, b1]));
+                                    img.put_pixel(
+                                        x_pixel as u32,
+                                        y_pixel as u32,
+                                        Rgb([r1, g1, b1]),
+                                    );
                                 } else if radius <= pupil_radius {
                                     img.put_pixel(x_pixel as u32, y_pixel as u32, Rgb([r2, g2, b2]))
                                 }
@@ -288,7 +320,11 @@ impl Board {
     }
 
     // Returns closest snake that I am longer than by advantage, if it exists
-    pub fn find_weaker_snake(&self, current_snake: &Battlesnake, advantage: i32) -> Option<Coordinate> {
+    pub fn find_weaker_snake(
+        &self,
+        current_snake: &Battlesnake,
+        advantage: i32,
+    ) -> Option<Coordinate> {
         let pos = current_snake.get_head();
         let mut closest_head = None;
         let mut closest_distance = i32::MAX;
@@ -298,14 +334,15 @@ impl Board {
             // Check if snake is short enough, closer, and not the same as current_snake
             if snake.get_id() != current_snake.get_id() {
                 let current_distance = pos.distance_to(snake.get_head());
-                if snake.get_length() as i32 <= current_snake.get_length() as i32 - advantage && current_distance < closest_distance {
+                if snake.get_length() as i32 <= current_snake.get_length() as i32 - advantage
+                    && current_distance < closest_distance
+                {
                     closest_distance = current_distance;
                     closest_head = Some(snake.get_head());
                 } else {
                     return None;
                 }
             }
-            
         }
 
         // Return closest head matching the criteria, or None
@@ -324,7 +361,10 @@ impl Board {
 
     // Returns true if pos is against the board walls
     pub fn is_against_wall(&self, pos: Coordinate) -> bool {
-        pos.get_x() == 0 || pos.get_x() == self.width - 1 || pos.get_y() == 0 || pos.get_y() == self.height - 1
+        pos.get_x() == 0
+            || pos.get_x() == self.width - 1
+            || pos.get_y() == 0
+            || pos.get_y() == self.height - 1
     }
 
     // Moves self down and predicts future turns
@@ -368,7 +408,8 @@ impl Board {
 
         let num_snakes = self.snakes.len();
         let mut worst_boards: Vec<[i32; DIRECTIONS]> = vec![[-1; DIRECTIONS]; num_snakes - 1];
-        let mut result_boards: Vec<Vec<u64>> = Vec::with_capacity(DIRECTIONS.pow(num_snakes as u32 - 1));
+        let mut result_boards: Vec<Vec<u64>> =
+            Vec::with_capacity(DIRECTIONS.pow(num_snakes as u32 - 1));
 
         // Iterate through all possible boards
         for i in 0..DIRECTIONS.pow(num_snakes as u32 - 1) {
@@ -428,7 +469,9 @@ impl Board {
 
             // Find the best of the worst directions
             for j in 1..DIRECTIONS {
-                if result_boards[snake_boards[j] as usize][id] > result_boards[snake_boards[best_direction] as usize][id] {
+                if result_boards[snake_boards[j] as usize][id]
+                    > result_boards[snake_boards[best_direction] as usize][id]
+                {
                     best_direction = j;
                 }
             }
@@ -453,7 +496,8 @@ impl Board {
 
         let num_snakes = self.snakes.len();
         let mut worst_boards: Vec<[i32; DIRECTIONS]> = vec![[-1; DIRECTIONS]; num_snakes];
-        let mut result_boards: Vec<Vec<u64>> = Vec::with_capacity(DIRECTIONS.pow(num_snakes as u32));
+        let mut result_boards: Vec<Vec<u64>> =
+            Vec::with_capacity(DIRECTIONS.pow(num_snakes as u32));
 
         // Iterate through all possible boards
         for i in 0..DIRECTIONS.pow(num_snakes as u32) {
@@ -485,7 +529,7 @@ impl Board {
                 let direction = (i / DIRECTIONS.pow(j as u32)) % DIRECTIONS;
                 let current_worst = snake_boards[direction];
                 let id = self.snakes[j].get_id() as usize;
-                
+
                 if current_worst == -1 || result[id] < result_boards[current_worst as usize][id] {
                     snake_boards[direction] = i as i32;
                 }
@@ -508,7 +552,9 @@ impl Board {
 
             // Find the best of the worst directions
             for j in 1..DIRECTIONS {
-                if result_boards[snake_boards[j] as usize][id] > result_boards[snake_boards[best_direction] as usize][id] {
+                if result_boards[snake_boards[j] as usize][id]
+                    > result_boards[snake_boards[best_direction] as usize][id]
+                {
                     best_direction = j;
                 }
             }
@@ -543,7 +589,7 @@ impl Board {
             }
         }
 
-        /* 
+        /*
         Any Battlesnake that has been eliminated is removed from the game board:
             Health less than or equal to 0
             Moved out of bounds
@@ -559,7 +605,9 @@ impl Board {
             let x = snake.get_head().get_x();
             let y = snake.get_head().get_y();
 
-            if snake.get_health() <= 0 || (x < 0 || x > self.width - 1 || y < 0 || y > self.height - 1) {
+            if snake.get_health() <= 0
+                || (x < 0 || x > self.width - 1 || y < 0 || y > self.height - 1)
+            {
                 self.snakes.remove(i);
             } else {
                 i += 1;
@@ -577,7 +625,8 @@ impl Board {
             }
         }
 
-        self.snakes.retain(|snake| !to_remove.contains(&snake.get_id()));
+        self.snakes
+            .retain(|snake| !to_remove.contains(&snake.get_id()));
 
         self.turn += 1;
     }
@@ -588,7 +637,11 @@ impl Board {
 
         for snake in &self.snakes {
             for tile in snake.get_body().range(..snake.get_length() - 1) {
-                if *tile == pos.get_down() || *tile == pos.get_up() || *tile == pos.get_left() || *tile == pos.get_right() {
+                if *tile == pos.get_down()
+                    || *tile == pos.get_up()
+                    || *tile == pos.get_left()
+                    || *tile == pos.get_right()
+                {
                     options -= 1;
                 }
             }
@@ -613,33 +666,45 @@ impl Board {
 
 #[macro_export]
 macro_rules! load_object {
-    (Board, $filename:expr) => {
-        {
-            let file: std::fs::File = std::fs::OpenOptions::new()
-                .read(true).open(format!("{}{}.json", crate::constants::_TEST_PATH, $filename)).unwrap();
-            let board: crate::move_request::MoveRequest = serde_json::from_reader(file).unwrap();
-            let board = board.into_values();
-            let board = board.2.into_board(board.3, 0);
-            board
-        }
-    };
-    (Battlesnake, $filename:expr) => {
-        {
-            let file: std::fs::File =std::fs::OpenOptions::new()
-                .read(true).open(format!("{}{}.json", crate::constants::_TEST_PATH, $filename)).unwrap();
-            let snake: crate::input_snake::InputSnake = from_reader(file).unwrap();
-            let snake = snake.into_battlesnake();
-            snake
-        }
-    };
-    ($type:ident, $filename:expr) => {
-        {
-            let file: std::fs::File = std::fs::OpenOptions::new()
-                .read(true).open(format!("{}{}.json", crate::constants::_TEST_PATH, $filename)).unwrap();
-            let object: $type = serde_json::from_reader(file).unwrap();
-            object
-        }
-    };
+    (Board, $filename:expr) => {{
+        let file: std::fs::File = std::fs::OpenOptions::new()
+            .read(true)
+            .open(format!(
+                "{}{}.json",
+                crate::constants::_TEST_PATH,
+                $filename
+            ))
+            .unwrap();
+        let board: crate::move_request::MoveRequest = serde_json::from_reader(file).unwrap();
+        let board = board.into_values();
+        let board = board.2.into_board(board.3, 0);
+        board
+    }};
+    (Battlesnake, $filename:expr) => {{
+        let file: std::fs::File = std::fs::OpenOptions::new()
+            .read(true)
+            .open(format!(
+                "{}{}.json",
+                crate::constants::_TEST_PATH,
+                $filename
+            ))
+            .unwrap();
+        let snake: crate::input_snake::InputSnake = from_reader(file).unwrap();
+        let snake = snake.into_battlesnake();
+        snake
+    }};
+    ($type:ident, $filename:expr) => {{
+        let file: std::fs::File = std::fs::OpenOptions::new()
+            .read(true)
+            .open(format!(
+                "{}{}.json",
+                crate::constants::_TEST_PATH,
+                $filename
+            ))
+            .unwrap();
+        let object: $type = serde_json::from_reader(file).unwrap();
+        object
+    }};
 }
 
 #[cfg(test)]
@@ -661,7 +726,7 @@ mod tests {
         let board = load_object!(Board, "check_area_open-01");
         let pos = board.get_snakes()[0].get_head().get_up();
 
-        let result = board.check_area(pos, 0,5, &mut Vec::with_capacity(5), 0);
+        let result = board.check_area(pos, 0, 5, &mut Vec::with_capacity(5), 0);
 
         assert_eq!(result, 5);
     }
@@ -672,7 +737,7 @@ mod tests {
         let pos = board.get_snakes()[0].get_head().get_down();
 
         let result = board.check_area(pos, 0, 10, &mut Vec::with_capacity(10), 0);
-        
+
         assert_eq!(result, 10);
     }
 
@@ -732,14 +797,14 @@ mod tests {
 
         assert_eq!(true_result[0] > false_result[0], true);
     }
-    
+
     // draw()
     #[test]
     fn test_draw() {
         let board = load_object!(Board, "test_board-04");
 
         let result = board.draw(String::from("test_board-04"));
-        
+
         assert_eq!(result.is_ok(), true);
     }
 

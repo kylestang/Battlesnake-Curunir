@@ -11,9 +11,18 @@ pub struct IndexResponse {
 
 impl IndexResponse {
     pub fn new(
-        apiversion: &'static str, author: &'static str,
-        color: &'static str, head: &'static str, tail: &'static str
+        apiversion: &'static str,
+        author: &'static str,
+        color: &'static str,
+        head: &'static str,
+        tail: &'static str,
     ) -> IndexResponse {
-        IndexResponse {apiversion, author, color, head, tail}
+        IndexResponse {
+            apiversion,
+            author,
+            color,
+            head,
+            tail,
+        }
     }
 }
