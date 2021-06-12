@@ -25,7 +25,7 @@ impl Coordinate {
         (self.x - other.x).abs() + (self.y - other.y).abs()
     }
 
-    // Down, up, right, left
+    // Returns an array of adjacent coordinates in order: Down, up, right, left
     pub fn get_adjacent(&self) -> [Coordinate; DIRECTIONS + 1] {
         [
             self.get_down(),
@@ -35,18 +35,22 @@ impl Coordinate {
         ]
     }
 
+    // Return the tile one position down
     pub fn get_down(&self) -> Coordinate {
         Coordinate::new(self.x, self.y - 1)
     }
 
+    // Return the tile one position up
     pub fn get_up(&self) -> Coordinate {
         Coordinate::new(self.x, self.y + 1)
     }
 
+    // Return the tile one position right
     pub fn get_right(&self) -> Coordinate {
         Coordinate::new(self.x + 1, self.y)
     }
 
+    // Return the tile one position left
     pub fn get_left(&self) -> Coordinate {
         Coordinate::new(self.x - 1, self.y)
     }

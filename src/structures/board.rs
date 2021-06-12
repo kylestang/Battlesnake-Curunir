@@ -339,8 +339,6 @@ impl Board {
                 {
                     closest_distance = current_distance;
                     closest_head = Some(snake.get_head());
-                } else {
-                    return None;
                 }
             }
         }
@@ -726,11 +724,12 @@ mod tests {
         let board = load_object!(Board, "check_area_open-01");
         let pos = board.get_snakes()[0].get_head().get_up();
 
-        let result = board.check_area(pos, 0, 5, &mut Vec::with_capacity(5), 0);
+        let result = board.check_area(pos, 0, 30, &mut Vec::with_capacity(30), 0);
 
-        assert_eq!(result, 5);
+        assert_eq!(result, 30);
     }
 
+    // TODO get new test case
     #[test]
     fn test_check_area_route() {
         let board = load_object!(Board, "check_area_route-01");
@@ -750,7 +749,7 @@ mod tests {
         let true_result = better_board.evaluate();
         let false_result = worse_board.evaluate();
 
-        assert_eq!(true_result[0] > false_result[0], true);
+        assert!(true_result[0] > false_result[0]);
     }
 
     #[test]
@@ -761,7 +760,7 @@ mod tests {
         let true_result = better_board.evaluate();
         let false_result = worse_board.evaluate();
 
-        assert_eq!(true_result[0] > false_result[0], true);
+        assert!(true_result[0] > false_result[0]);
     }
 
     #[test]
@@ -773,7 +772,7 @@ mod tests {
         let true_result = better_board.evaluate();
         let false_result = worse_board.evaluate();
 
-        assert_eq!(true_result[1] > false_result[1], true);
+        assert!(true_result[1] > false_result[1]);
     }
 
     #[test]
@@ -784,7 +783,7 @@ mod tests {
         let true_result = better_board.evaluate();
         let false_result = worse_board.evaluate();
 
-        assert_eq!(true_result[0] > false_result[0], true);
+        assert!(true_result[0] > false_result[0]);
     }
 
     #[test]
@@ -795,17 +794,17 @@ mod tests {
         let true_result = better_board.evaluate();
         let false_result = worse_board.evaluate();
 
-        assert_eq!(true_result[0] > false_result[0], true);
+        assert!(true_result[0] > false_result[0]);
     }
 
     // draw()
     #[test]
     fn test_draw() {
-        let board = load_object!(Board, "test_board-04");
+        let board = load_object!(Board, "empty_board-11x11");
 
-        let result = board.draw(String::from("test_board-04"));
+        let result = board.draw(String::from("empty_board-11x11"));
 
-        assert_eq!(result.is_ok(), true);
+        assert!(result.is_ok());
     }
 
     // find_closest_food
@@ -815,7 +814,7 @@ mod tests {
 
         let food = board.find_closest_food(board.get_snakes()[0].get_head());
 
-        assert_eq!(food.is_none(), true);
+        assert!(food.is_none());
     }
 
     #[test]
@@ -844,7 +843,7 @@ mod tests {
 
         let snake_head = board.find_weaker_snake(snake, 5);
 
-        assert_eq!(snake_head.is_none(), true);
+        assert!(snake_head.is_none());
     }
 
     #[test]
@@ -947,7 +946,7 @@ mod tests {
 
         let snake = board.get_snake(1);
 
-        assert_eq!(snake.is_none(), true);
+        assert!(snake.is_none());
     }
 
     #[test]
@@ -966,7 +965,7 @@ mod tests {
 
         let result = board.is_against_wall(Coordinate::new(3, 2));
 
-        assert_eq!(result, false);
+        assert!(!result);
     }
 
     #[test]
@@ -975,7 +974,7 @@ mod tests {
 
         let result = board.is_against_wall(Coordinate::new(0, 3));
 
-        assert_eq!(result, true);
+        assert!(result);
     }
 
     // minimax()
@@ -985,7 +984,7 @@ mod tests {
 
         let result = board.minimax(0, 6);
 
-        assert_eq!(result[0] > 0, true);
+        assert!(result[0] > 0);
     }
 
     // open_directions()

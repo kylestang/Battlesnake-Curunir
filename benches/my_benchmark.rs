@@ -1,6 +1,7 @@
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
 use curunir::constants::*;
 use curunir::requests::*;
+use curunir::structures::coordinate::Coordinate;
 
 use std::cmp::max;
 
@@ -56,6 +57,22 @@ pub fn body_collision_with_bench(c: &mut Criterion) {
     });
 }
 
+pub fn check_area_bench(c: &mut Criterion) {
+    let board = black_box(load_object!(Board, "empty_board-11x11"));
+
+    c.bench_function("check_area", |b| {
+        b.iter(|| {
+            board.check_area(
+                Coordinate::new(7, 10),
+                0,
+                45,
+                &mut Vec::with_capacity(45),
+                0,
+            )
+        })
+    });
+}
+
 pub fn get_option_bench(c: &mut Criterion) {
     let board = load_object!(Board, "simple-01");
     let snake = black_box(&board.get_snakes()[0]);
@@ -106,7 +123,8 @@ criterion_group!(
     game_step_bench,
     minimax_bench,
     minimax_8_bench,
-    open_directions_bench
+    open_directions_bench,
+    check_area_bench
 );
 
 criterion_main!(benches);
