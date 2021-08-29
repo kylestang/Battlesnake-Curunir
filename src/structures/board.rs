@@ -1,5 +1,6 @@
 use image::{ImageResult, Rgb, RgbImage};
 use std::cmp::{max, min};
+use std::collections::{BTreeMap, VecDeque};
 
 use crate::battlesnake::Battlesnake;
 use crate::constants::{
@@ -68,6 +69,81 @@ impl Board {
         self.turn
     }
 
+    pub fn area_controlled(&self) -> BTreeMap<u8, i32> {
+        #[derive(Clone, PartialEq)]
+        enum TileStatus {
+            Empty,
+            Gone,
+            Taken(u8),
+        }
+
+        // Initialization
+        let mut areas = BTreeMap::new();
+        let mut snakes = self.snakes.clone();
+        snakes.sort_unstable_by_key(|snake| 0 - snake.get_length() as i32);
+
+        let mut queue = VecDeque::new();
+
+        // pos(x,y) = grid[self.width * y + x]
+        let mut grid = vec![TileStatus::Empty; (self.height * self.width) as usize];
+
+        for snake in &snakes {
+            areas.insert(snake.get_id(), 0);
+            queue.push_back((snake.get_id(), snake.get_head()));
+
+            grid[(self.width * snake.get_head().get_y() + snake.get_head().get_x()) as usize] =
+                TileStatus::Taken(snake.get_id());
+
+            for pos in snake.get_body().range(1..snake.get_body().len() - 1) {
+                grid[(self.width * pos.get_y() + pos.get_x()) as usize] = TileStatus::Gone;
+            }
+        }
+
+        while let Some(current) = queue.pop_front() {
+            if grid[(self.width * current.1.get_y() + current.1.get_x()) as usize]
+                != TileStatus::Gone
+            {
+                for &pos in current
+                    .1
+                    .get_adjacent()
+                    .iter()
+                    .filter(|&&pos| !self.is_out_of_bounds(pos))
+                {
+                    let grid_value = (self.width * pos.get_y() + pos.get_x()) as usize;
+
+                    match grid[grid_value] {
+                        TileStatus::Empty => {
+                            grid[grid_value] = TileStatus::Taken(current.0);
+                            queue.push_back((current.0, pos));
+                            *areas.entry(current.0).or_insert(0) += 1;
+                        }
+                        TileStatus::Gone => (),
+                        TileStatus::Taken(snake_id) => {
+                            if current.0 != snake_id
+                                && self.get_snake(current.0).unwrap().get_length()
+                                    == self.get_snake(snake_id).unwrap().get_length()
+                            {
+                                grid[grid_value] = TileStatus::Gone;
+                                *areas.entry(snake_id).or_insert(0) -= 1;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        areas
+    }
+
+    pub fn body_collision(&self, pos: Coordinate) -> bool {
+        for snake in &self.snakes {
+            if snake.get_body().contains(&pos) {
+                return true;
+            }
+        }
+        false
+    }
+
     // Find the longest possible route a snake can travel from the current position
     pub fn check_area(
         &self,
@@ -83,11 +159,7 @@ impl Board {
         }
 
         // Check out of bounds
-        if pos.get_x() < 0
-            || pos.get_x() > self.width - 1
-            || pos.get_y() < 0
-            || pos.get_y() > self.height - 1
-        {
+        if self.is_out_of_bounds(pos) {
             return current_area;
         }
 
@@ -260,7 +332,7 @@ impl Board {
                 let snake = &self.snakes[current_snake];
 
                 // digit 0
-                let open_directions = self.open_directions(&snake) as u64;
+                let open_directions = self.open_directions(snake) as u64;
                 score += open_directions;
 
                 // digits 1,2
@@ -274,7 +346,7 @@ impl Board {
                 score += 1_000 * min(999, snake.get_length() as u64);
 
                 // digits 6,7
-                let weak_head = self.find_weaker_snake(&snake, LENGTH_ADVANTAGE);
+                let weak_head = self.find_weaker_snake(snake, LENGTH_ADVANTAGE);
                 if let Some(head_pos) = weak_head {
                     let value = max(0, 100 - snake.get_head().distance_to(head_pos));
                     score += 1_000_000 * value as u64;
@@ -305,11 +377,11 @@ impl Board {
             let mut closest_food = self.food[0];
             let mut closest_distance = pos.distance_to(closest_food);
             // Iterate over food
-            for i in 1..self.food.len() {
-                let current_distance = pos.distance_to(self.food[i]);
+            for &food in &self.food[1..] {
+                let current_distance = pos.distance_to(food);
                 if current_distance < closest_distance {
                     closest_distance = current_distance;
-                    closest_food = self.food[i];
+                    closest_food = food;
                 }
             }
             // Return the closest food
@@ -363,6 +435,13 @@ impl Board {
             || pos.get_x() == self.width - 1
             || pos.get_y() == 0
             || pos.get_y() == self.height - 1
+    }
+
+    pub fn is_out_of_bounds(&self, pos: Coordinate) -> bool {
+        pos.get_x() < 0
+            || pos.get_x() >= self.width
+            || pos.get_y() < 0
+            || pos.get_y() >= self.height
     }
 
     // Moves self down and predicts future turns
@@ -481,13 +560,13 @@ impl Board {
         result_boards.swap_remove(return_board)
     }
 
-    // Recursive minimax to find score of position
+    // Recursive minimax-ish to find score of position
     pub fn minimax(self, current_level: i32, max_level: i32) -> Vec<u64> {
         if DRAWING {
             self.draw(String::from("test")).unwrap();
         }
 
-        // End case. Return if self is dead or current_level >= max_level
+        // End case. Return if all snakes are dead or current_level >= max_level
         if current_level >= max_level || self.snakes.is_empty() {
             return self.evaluate();
         }
@@ -634,11 +713,11 @@ impl Board {
         let pos = snake.get_head();
 
         for snake in &self.snakes {
-            for tile in snake.get_body().range(..snake.get_length() - 1) {
-                if *tile == pos.get_down()
-                    || *tile == pos.get_up()
-                    || *tile == pos.get_left()
-                    || *tile == pos.get_right()
+            for &tile in snake.get_body().range(..snake.get_length() - 1) {
+                if tile == pos.get_down()
+                    || tile == pos.get_up()
+                    || tile == pos.get_left()
+                    || tile == pos.get_right()
                 {
                     options -= 1;
                 }
@@ -708,6 +787,40 @@ macro_rules! load_object {
 #[cfg(test)]
 mod tests {
     use super::*;
+    // area_controlled
+    #[test]
+    fn test_area_controlled_one() {
+        let board = load_object!(Board, "simple-01");
+
+        let result = board.area_controlled();
+        let mut correct = BTreeMap::new();
+        correct.insert(0, 47);
+        assert_eq!(result, correct)
+    }
+
+    #[test]
+    fn test_area_controlled_two() {
+        let board = load_object!(Board, "simple-02");
+
+        let result = board.area_controlled();
+        let mut correct = BTreeMap::new();
+        correct.insert(0, 19);
+        correct.insert(1, 19);
+        assert_eq!(result, correct)
+    }
+
+    #[test]
+    fn test_area_controlled_three() {
+        let board = load_object!(Board, "test_board-04");
+
+        let result = board.area_controlled();
+        let mut correct = BTreeMap::new();
+        correct.insert(0, 32);
+        correct.insert(1, 39);
+        correct.insert(2, 17);
+        assert_eq!(result, correct)
+    }
+
     // check_area
     #[test]
     fn test_check_area_closed() {

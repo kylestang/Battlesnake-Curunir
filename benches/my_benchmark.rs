@@ -47,6 +47,14 @@ macro_rules! load_object {
     }};
 }
 
+pub fn area_controlled_bench(c: &mut Criterion) {
+    let board = load_object!(Board, "test_board-04");
+
+    c.bench_function("area_controlled", |b| {
+        b.iter(|| board.area_controlled())
+    });
+}
+
 pub fn body_collision_with_bench(c: &mut Criterion) {
     let board = load_object!(Board, "test_board-03");
     let snake1 = black_box(&board.get_snakes()[1]);
@@ -58,14 +66,14 @@ pub fn body_collision_with_bench(c: &mut Criterion) {
 }
 
 pub fn check_area_bench(c: &mut Criterion) {
-    let board = black_box(load_object!(Board, "empty_board-11x11"));
+    let board = black_box(load_object!(Board, "check_area_closed-01"));
 
     c.bench_function("check_area", |b| {
         b.iter(|| {
             board.check_area(
                 Coordinate::new(7, 10),
                 0,
-                45,
+                30,
                 &mut Vec::with_capacity(45),
                 0,
             )
@@ -124,7 +132,8 @@ criterion_group!(
     minimax_bench,
     minimax_8_bench,
     open_directions_bench,
-    check_area_bench
+    check_area_bench,
+    area_controlled_bench
 );
 
 criterion_main!(benches);
