@@ -1,62 +1,21 @@
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
-use curunir::constants::*;
+use curunir::constants;
 use curunir::requests::*;
 use curunir::structures::coordinate::Coordinate;
+use curunir::game_objects::simulator::Simulator;
+use curunir::game_objects::engine::Engine;
+use curunir::load_object;
 
 use std::cmp::max;
 
-macro_rules! load_object {
-    (Board, $filename:expr) => {{
-        let file: std::fs::File = std::fs::OpenOptions::new()
-            .read(true)
-            .open(format!(
-                "{}{}.json",
-                curunir::constants::_TEST_PATH,
-                $filename
-            ))
-            .unwrap();
-        let board: move_request::MoveRequest = serde_json::from_reader(file).unwrap();
-        let board = board.into_values();
-        let board = board.2.into_board(board.3, 0);
-        board
-    }};
-    (Battlesnake, $filename:expr) => {{
-        let file: std::fs::File = std::fs::OpenOptions::new()
-            .read(true)
-            .open(format!(
-                "{}{}.json",
-                curunir::constants::_TEST_PATH,
-                $filename
-            ))
-            .unwrap();
-        let snake: crate::input_snake::InputSnake = from_reader(file).unwrap();
-        let snake = snake.into_battlesnake();
-        snake
-    }};
-    ($type:ident, $filename:expr) => {{
-        let file: std::fs::File = std::fs::OpenOptions::new()
-            .read(true)
-            .open(format!(
-                "{}{}.json",
-                curunir::constants::_TEST_PATH,
-                $filename
-            ))
-            .unwrap();
-        let object: $type = serde_json::from_reader(file).unwrap();
-        object
-    }};
-}
-
 pub fn area_controlled_bench(c: &mut Criterion) {
-    let board = load_object!(Board, "test_board-04");
+    let mut board = load_object!(Board, "test_board-04", constants::_TEST_PATH);
 
-    c.bench_function("area_controlled", |b| {
-        b.iter(|| board.area_controlled())
-    });
+    c.bench_function("area_controlled", |b| b.iter(|| board.area_controlled()));
 }
 
 pub fn body_collision_with_bench(c: &mut Criterion) {
-    let board = load_object!(Board, "test_board-03");
+    let board = load_object!(Board, "test_board-03", constants::_TEST_PATH);
     let snake1 = black_box(&board.get_snakes()[1]);
     let snake2 = black_box(&board.get_snakes()[0]);
 
@@ -66,7 +25,7 @@ pub fn body_collision_with_bench(c: &mut Criterion) {
 }
 
 pub fn check_area_bench(c: &mut Criterion) {
-    let board = black_box(load_object!(Board, "check_area_closed-01"));
+    let board = black_box(load_object!(Board, "check_area_closed-01", constants::_TEST_PATH));
 
     c.bench_function("check_area", |b| {
         b.iter(|| {
@@ -82,7 +41,7 @@ pub fn check_area_bench(c: &mut Criterion) {
 }
 
 pub fn get_option_bench(c: &mut Criterion) {
-    let board = load_object!(Board, "simple-01");
+    let board = load_object!(Board, "simple-01", constants::_TEST_PATH);
     let snake = black_box(&board.get_snakes()[0]);
     let value = black_box(0);
 
@@ -90,33 +49,39 @@ pub fn get_option_bench(c: &mut Criterion) {
 }
 
 pub fn game_step_bench(c: &mut Criterion) {
-    let board = black_box(load_object!(Board, "food-01"));
+    let board = black_box(load_object!(Board, "food-01", constants::_TEST_PATH));
+    let ruleset = load_object!(Ruleset, "food-01", constants::_TEST_PATH);
+    let engine = Engine::new();
 
-    c.bench_function("game_step", |b| b.iter(|| board.clone().game_step()));
+    c.bench_function("game_step", |b| b.iter(|| engine.game_step(&mut board.clone(), &ruleset)));
 }
 
 pub fn minimax_bench(c: &mut Criterion) {
-    let board = black_box(load_object!(Board, "test_board-03"));
+    let board = black_box(load_object!(Board, "test_board-03", constants::_TEST_PATH));
     let current = black_box(0);
-    let max_depth = black_box(max(EXPONENT / board.get_snakes().len() as i32, 1));
+    let max_depth = black_box(max(constants::EXPONENT / board.get_snakes().len() as i32, 1));
+    let ruleset = load_object!(Ruleset, "test_board-03", constants::_TEST_PATH);
+    let simulator = Simulator::new(ruleset);
 
     c.bench_function("minimax", |b| {
-        b.iter(|| board.clone().minimax(current, max_depth))
+        b.iter(|| simulator.minimax(board.clone(), current, max_depth))
     });
 }
 
 pub fn minimax_8_bench(c: &mut Criterion) {
-    let board = black_box(load_object!(Board, "test_board-05"));
+    let board = black_box(load_object!(Board, "test_board-05", constants::_TEST_PATH));
     let current = black_box(0);
-    let max_depth = black_box(max(EXPONENT / board.get_snakes().len() as i32, 1));
+    let max_depth = black_box(max(constants::EXPONENT / board.get_snakes().len() as i32, 1));
+    let ruleset = load_object!(Ruleset, "test_board-05", constants::_TEST_PATH);
+    let simulator = Simulator::new(ruleset);
 
     c.bench_function("minimax", |b| {
-        b.iter(|| board.clone().minimax(current, max_depth))
+        b.iter(|| simulator.minimax(board.clone(), current, max_depth))
     });
 }
 
 pub fn open_directions_bench(c: &mut Criterion) {
-    let board = black_box(load_object!(Board, "food-01"));
+    let board = black_box(load_object!(Board, "food-01", constants::_TEST_PATH));
     let snake = black_box(&board.get_snakes()[0]);
 
     c.bench_function("open_directions", |b| {

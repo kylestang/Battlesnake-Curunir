@@ -32,6 +32,8 @@ impl InputBoard {
             }
         }
 
+        self.food.shrink_to_fit();
+
         // Return the Board object
         Board::new(
             self.height,

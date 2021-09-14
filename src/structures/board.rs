@@ -1,11 +1,9 @@
 use image::{ImageResult, Rgb, RgbImage};
-use std::cmp::{max, min};
 use std::collections::{BTreeMap, VecDeque};
 
 use crate::battlesnake::Battlesnake;
 use crate::constants::{
-    DIRECTIONS, DRAWING, DRAW_PATH, EYE_RATIO, FOOD_RATIO, LENGTH_ADVANTAGE, PUPIL_RATIO,
-    TILE_SIZE, YOU_ID,
+    DIRECTIONS, DRAW_PATH, EYE_RATIO, FOOD_RATIO, PUPIL_RATIO, TILE_SIZE, YOU_ID,
 };
 use crate::coordinate::Coordinate;
 
@@ -41,16 +39,20 @@ impl Board {
         }
     }
 
-    pub fn _get_height(&self) -> i32 {
+    pub fn get_height(&self) -> i32 {
         self.height
     }
 
-    pub fn _get_width(&self) -> i32 {
+    pub fn get_width(&self) -> i32 {
         self.width
     }
 
     pub fn get_food(&self) -> &Vec<Coordinate> {
         &self.food
+    }
+
+    pub fn get_food_mut(&mut self) -> &mut Vec<Coordinate> {
+        &mut self.food
     }
 
     pub fn _get_hazards(&self) -> &Vec<Coordinate> {
@@ -65,11 +67,19 @@ impl Board {
         &mut self.snakes
     }
 
+    pub fn get_max_snakes(&self) -> u8 {
+        self.max_snakes
+    }
+
+    pub fn set_max_snakes(&mut self, max_snakes: u8) {
+        self.max_snakes = max_snakes;
+    }
+
     pub fn get_turn(&self) -> i32 {
         self.turn
     }
 
-    pub fn area_controlled(&self) -> BTreeMap<u8, i32> {
+    pub fn area_controlled(&mut self) -> BTreeMap<u8, i32> {
         #[derive(Clone, PartialEq)]
         enum TileStatus {
             Empty,
@@ -79,15 +89,16 @@ impl Board {
 
         // Initialization
         let mut areas = BTreeMap::new();
-        let mut snakes = self.snakes.clone();
-        snakes.sort_unstable_by_key(|snake| 0 - snake.get_length() as i32);
+        //let mut snakes = self.snakes.clone();
+        self.snakes
+            .sort_unstable_by_key(|snake| 0 - snake.get_length() as i32);
 
         let mut queue = VecDeque::new();
 
         // pos(x,y) = grid[self.width * y + x]
         let mut grid = vec![TileStatus::Empty; (self.height * self.width) as usize];
 
-        for snake in &snakes {
+        for snake in &self.snakes {
             areas.insert(snake.get_id(), 0);
             queue.push_back((snake.get_id(), snake.get_head()));
 
@@ -322,54 +333,6 @@ impl Board {
         img.save(format!("{}{}.png", DRAW_PATH, file_name))
     }
 
-    pub fn evaluate(&self) -> Vec<u64> {
-        let mut result = Vec::with_capacity(self.max_snakes as usize);
-        let mut current_snake = 0;
-
-        for i in 0..self.max_snakes {
-            let mut score: u64 = 0;
-            if current_snake < self.snakes.len() && i == self.snakes[current_snake].get_id() {
-                let snake = &self.snakes[current_snake];
-
-                // digit 0
-                let open_directions = self.open_directions(snake) as u64;
-                score += open_directions;
-
-                // digits 1,2
-                let closest_food = self.find_closest_food(snake.get_head());
-                if let Some(food_pos) = closest_food {
-                    let value = max(0, 100 - snake.get_head().distance_to(food_pos));
-                    score += 10 * value as u64;
-                }
-
-                // digits 3,4,5
-                score += 1_000 * min(999, snake.get_length() as u64);
-
-                // digits 6,7
-                let weak_head = self.find_weaker_snake(snake, LENGTH_ADVANTAGE);
-                if let Some(head_pos) = weak_head {
-                    let value = max(0, 100 - snake.get_head().distance_to(head_pos));
-                    score += 1_000_000 * value as u64;
-                }
-
-                // digit 8
-                if open_directions >= 2 {
-                    score += 100_000_000
-                }
-
-                // digits 9, 10
-                score += 1_000_000_000 * max(0, 100 - self.snakes.len()) as u64;
-
-                current_snake += 1;
-            } else {
-                score = 0;
-            }
-
-            result.push(score);
-        }
-        result
-    }
-
     // Returns the closest food to pos
     pub fn find_closest_food(&self, pos: Coordinate) -> Option<Coordinate> {
         // If food exists
@@ -429,6 +392,10 @@ impl Board {
         None
     }
 
+    pub fn increment_turn(&mut self) {
+        self.turn += 1;
+    }
+
     // Returns true if pos is against the board walls
     pub fn is_against_wall(&self, pos: Coordinate) -> bool {
         pos.get_x() == 0
@@ -442,270 +409,6 @@ impl Board {
             || pos.get_x() >= self.width
             || pos.get_y() < 0
             || pos.get_y() >= self.height
-    }
-
-    // Moves self down and predicts future turns
-    pub fn check_down(&mut self, current_level: i32, max_level: i32) -> Vec<u64> {
-        let down = self.snakes[0].get_down();
-        self.snakes[0].move_to(down);
-        self.recursion_entry(current_level, max_level)
-    }
-
-    // Moves self up and predicts future turns
-    pub fn check_up(&mut self, current_level: i32, max_level: i32) -> Vec<u64> {
-        let up = self.snakes[0].get_up();
-        self.snakes[0].move_to(up);
-        self.recursion_entry(current_level, max_level)
-    }
-
-    // Moves self right and predicts future turns
-    pub fn check_right(&mut self, current_level: i32, max_level: i32) -> Vec<u64> {
-        let right = self.snakes[0].get_right();
-        self.snakes[0].move_to(right);
-        self.recursion_entry(current_level, max_level)
-    }
-
-    // Moves self left and predicts future turns
-    pub fn check_left(&mut self, current_level: i32, max_level: i32) -> Vec<u64> {
-        let left = self.snakes[0].get_left();
-        self.snakes[0].move_to(left);
-        self.recursion_entry(current_level, max_level)
-    }
-
-    // First level of recursion, my snake has already moved
-    fn recursion_entry(&mut self, current_level: i32, max_level: i32) -> Vec<u64> {
-        if DRAWING {
-            self.draw(String::from("test")).unwrap();
-        }
-
-        // End case. Return if self is dead or current_level >= max_level
-        if current_level >= max_level || self.snakes.is_empty() {
-            return self.evaluate();
-        }
-
-        let num_snakes = self.snakes.len();
-        let mut worst_boards: Vec<[i32; DIRECTIONS]> = vec![[-1; DIRECTIONS]; num_snakes - 1];
-        let mut result_boards: Vec<Vec<u64>> =
-            Vec::with_capacity(DIRECTIONS.pow(num_snakes as u32 - 1));
-
-        // Iterate through all possible boards
-        for i in 0..DIRECTIONS.pow(num_snakes as u32 - 1) {
-            // Create new Board to modify
-            let mut new_board = self.clone();
-
-            if DRAWING {
-                new_board.draw(String::from("test")).unwrap();
-            }
-
-            // Move each snake to new position on new_board
-            for j in 0..num_snakes - 1 {
-                let snake = &mut new_board.get_snakes_mut()[j + 1];
-                let pos = snake.get_option((i / DIRECTIONS.pow(j as u32)) % DIRECTIONS);
-                snake.move_to(pos);
-            }
-
-            if DRAWING {
-                new_board.draw(String::from("test")).unwrap();
-            }
-
-            // Update new_board
-            new_board.game_step();
-
-            if DRAWING {
-                new_board.draw(String::from("test")).unwrap();
-            }
-
-            // Get the maximin result from this position
-            let result = new_board.minimax(current_level + 1, max_level);
-
-            // Update worst outcomes
-            for (j, snake_boards) in worst_boards.iter_mut().enumerate() {
-                let direction = (i / DIRECTIONS.pow(j as u32)) % DIRECTIONS;
-                let current_worst = snake_boards[direction];
-                let id = self.snakes[j + 1].get_id() as usize;
-
-                if current_worst == -1 || result[id] < result_boards[current_worst as usize][id] {
-                    snake_boards[direction] = i as i32;
-                }
-            }
-            // Store calculated board
-            result_boards.push(result);
-        }
-
-        if DRAWING {
-            self.draw(String::from("test")).unwrap();
-        }
-
-        // Find the index of the board to return
-        let mut return_board = 0;
-
-        // Iterate over the worst boards for each snake
-        for (i, snake_boards) in worst_boards.iter().enumerate() {
-            let mut best_direction = 0;
-            let id = self.snakes[i + 1].get_id() as usize;
-
-            // Find the best of the worst directions
-            for j in 1..DIRECTIONS {
-                if result_boards[snake_boards[j] as usize][id]
-                    > result_boards[snake_boards[best_direction] as usize][id]
-                {
-                    best_direction = j;
-                }
-            }
-
-            return_board += best_direction * DIRECTIONS.pow(i as u32);
-        }
-
-        // Return the best board
-        result_boards.swap_remove(return_board)
-    }
-
-    // Recursive minimax-ish to find score of position
-    pub fn minimax(self, current_level: i32, max_level: i32) -> Vec<u64> {
-        if DRAWING {
-            self.draw(String::from("test")).unwrap();
-        }
-
-        // End case. Return if all snakes are dead or current_level >= max_level
-        if current_level >= max_level || self.snakes.is_empty() {
-            return self.evaluate();
-        }
-
-        let num_snakes = self.snakes.len();
-        let mut worst_boards: Vec<[i32; DIRECTIONS]> = vec![[-1; DIRECTIONS]; num_snakes];
-        let mut result_boards: Vec<Vec<u64>> =
-            Vec::with_capacity(DIRECTIONS.pow(num_snakes as u32));
-
-        // Iterate through all possible boards
-        for i in 0..DIRECTIONS.pow(num_snakes as u32) {
-            // Create new Board to modify
-            let mut new_board = self.clone();
-            // Move each snake to new position on new_board
-            for j in 0..num_snakes {
-                let snake = &mut new_board.get_snakes_mut()[j];
-                let pos = snake.get_option((i / DIRECTIONS.pow(j as u32)) % DIRECTIONS);
-                snake.move_to(pos);
-            }
-
-            if DRAWING {
-                new_board.draw(String::from("test")).unwrap();
-            }
-
-            // Update new_board
-            new_board.game_step();
-
-            if DRAWING {
-                new_board.draw(String::from("test")).unwrap();
-            }
-
-            // Get the maximin result from this position
-            let result = new_board.minimax(current_level + 1, max_level);
-
-            // Update worst outcomes
-            for (j, snake_boards) in worst_boards.iter_mut().enumerate() {
-                let direction = (i / DIRECTIONS.pow(j as u32)) % DIRECTIONS;
-                let current_worst = snake_boards[direction];
-                let id = self.snakes[j].get_id() as usize;
-
-                if current_worst == -1 || result[id] < result_boards[current_worst as usize][id] {
-                    snake_boards[direction] = i as i32;
-                }
-            }
-            // Store calculated board
-            result_boards.push(result);
-        }
-
-        if DRAWING {
-            self.draw(String::from("test")).unwrap();
-        }
-
-        // Find the index of the board to return
-        let mut return_board = 0;
-
-        // Iterate over the worst boards for each snake
-        for (i, snake_boards) in worst_boards.iter().enumerate() {
-            let mut best_direction = 0;
-            let id = self.snakes[i].get_id() as usize;
-
-            // Find the best of the worst directions
-            for j in 1..DIRECTIONS {
-                if result_boards[snake_boards[j] as usize][id]
-                    > result_boards[snake_boards[best_direction] as usize][id]
-                {
-                    best_direction = j;
-                }
-            }
-
-            // Add the best direction to the return_board
-            return_board += best_direction * DIRECTIONS.pow(i as u32);
-        }
-
-        // Return the best board
-        result_boards.swap_remove(return_board)
-    }
-
-    pub fn game_step(&mut self) {
-        // Check all food
-        let mut i = 0;
-        while i < self.food.len() {
-            let mut food_eaten = false;
-
-            // Check all snakes
-            for snake in &mut self.snakes {
-                if snake.get_head() == self.food[i] {
-                    food_eaten = true;
-                    snake.eat_food();
-                }
-            }
-
-            // Remove food if eaten
-            if food_eaten {
-                self.food.swap_remove(i);
-            } else {
-                i += 1;
-            }
-        }
-
-        /*
-        Any Battlesnake that has been eliminated is removed from the game board:
-            Health less than or equal to 0
-            Moved out of bounds
-            Collided with themselves
-            Collided with another Battlesnake
-            Collided head-to-head and lost
-        */
-
-        // Eliminate snakes that are out of health or out of bounds
-        let mut i = 0;
-        while i < self.snakes.len() {
-            let snake = &self.snakes[i];
-            let x = snake.get_head().get_x();
-            let y = snake.get_head().get_y();
-
-            if snake.get_health() <= 0
-                || (x < 0 || x > self.width - 1 || y < 0 || y > self.height - 1)
-            {
-                self.snakes.remove(i);
-            } else {
-                i += 1;
-            }
-        }
-
-        // Check for collisions
-        let mut to_remove = Vec::with_capacity(self.snakes.len());
-        for snake in &self.snakes {
-            for other_snake in &self.snakes {
-                if snake.lost_headon(other_snake) || snake.body_collision_with(other_snake) {
-                    to_remove.push(snake.get_id());
-                    break;
-                }
-            }
-        }
-
-        self.snakes
-            .retain(|snake| !to_remove.contains(&snake.get_id()));
-
-        self.turn += 1;
     }
 
     pub fn open_directions(&self, snake: &Battlesnake) -> i32 {
@@ -741,56 +444,15 @@ impl Board {
     }
 }
 
-#[macro_export]
-macro_rules! load_object {
-    (Board, $filename:expr) => {{
-        let file: std::fs::File = std::fs::OpenOptions::new()
-            .read(true)
-            .open(format!(
-                "{}{}.json",
-                crate::constants::_TEST_PATH,
-                $filename
-            ))
-            .unwrap();
-        let board: crate::move_request::MoveRequest = serde_json::from_reader(file).unwrap();
-        let board = board.into_values();
-        let board = board.2.into_board(board.3, 0);
-        board
-    }};
-    (Battlesnake, $filename:expr) => {{
-        let file: std::fs::File = std::fs::OpenOptions::new()
-            .read(true)
-            .open(format!(
-                "{}{}.json",
-                crate::constants::_TEST_PATH,
-                $filename
-            ))
-            .unwrap();
-        let snake: crate::input_snake::InputSnake = from_reader(file).unwrap();
-        let snake = snake.into_battlesnake();
-        snake
-    }};
-    ($type:ident, $filename:expr) => {{
-        let file: std::fs::File = std::fs::OpenOptions::new()
-            .read(true)
-            .open(format!(
-                "{}{}.json",
-                crate::constants::_TEST_PATH,
-                $filename
-            ))
-            .unwrap();
-        let object: $type = serde_json::from_reader(file).unwrap();
-        object
-    }};
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::load_object;
+    use crate::constants::_TEST_PATH;
     // area_controlled
     #[test]
     fn test_area_controlled_one() {
-        let board = load_object!(Board, "simple-01");
+        let mut board = load_object!(Board, "simple-01", _TEST_PATH);
 
         let result = board.area_controlled();
         let mut correct = BTreeMap::new();
@@ -800,7 +462,7 @@ mod tests {
 
     #[test]
     fn test_area_controlled_two() {
-        let board = load_object!(Board, "simple-02");
+        let mut board = load_object!(Board, "simple-02", _TEST_PATH);
 
         let result = board.area_controlled();
         let mut correct = BTreeMap::new();
@@ -811,7 +473,7 @@ mod tests {
 
     #[test]
     fn test_area_controlled_three() {
-        let board = load_object!(Board, "test_board-04");
+        let mut board = load_object!(Board, "test_board-04", _TEST_PATH);
 
         let result = board.area_controlled();
         let mut correct = BTreeMap::new();
@@ -824,7 +486,7 @@ mod tests {
     // check_area
     #[test]
     fn test_check_area_closed() {
-        let board = load_object!(Board, "check_area_closed-01");
+        let board = load_object!(Board, "check_area_closed-01", _TEST_PATH);
         let pos = board.get_snakes()[0].get_head().get_left();
 
         let result = board.check_area(pos, 0, 10, &mut Vec::with_capacity(10), 0);
@@ -834,7 +496,7 @@ mod tests {
 
     #[test]
     fn test_check_area_open() {
-        let board = load_object!(Board, "check_area_open-01");
+        let board = load_object!(Board, "check_area_open-01", _TEST_PATH);
         let pos = board.get_snakes()[0].get_head().get_up();
 
         let result = board.check_area(pos, 0, 30, &mut Vec::with_capacity(30), 0);
@@ -845,7 +507,7 @@ mod tests {
     // TODO get new test case
     #[test]
     fn test_check_area_route() {
-        let board = load_object!(Board, "check_area_route-01");
+        let board = load_object!(Board, "check_area_route-01", _TEST_PATH);
         let pos = board.get_snakes()[0].get_head().get_down();
 
         let result = board.check_area(pos, 0, 10, &mut Vec::with_capacity(10), 0);
@@ -853,67 +515,10 @@ mod tests {
         assert_eq!(result, 10);
     }
 
-    // compare_to
-    #[test]
-    fn test_compare_to_advantage() {
-        let better_board = load_object!(Board, "compare_to_advantage-01-better");
-        let worse_board = load_object!(Board, "compare_to_advantage-01-worse");
-
-        let true_result = better_board.evaluate();
-        let false_result = worse_board.evaluate();
-
-        assert!(true_result[0] > false_result[0]);
-    }
-
-    #[test]
-    fn test_compare_to_alive() {
-        let better_board = load_object!(Board, "better_than_alive-01-dead");
-        let worse_board = load_object!(Board, "better_than_alive-01-alive");
-
-        let true_result = better_board.evaluate();
-        let false_result = worse_board.evaluate();
-
-        assert!(true_result[0] > false_result[0]);
-    }
-
-    #[test]
-    fn test_compare_to_dead() {
-        let better_board = load_object!(Board, "better_than_dead-01-alive");
-        let mut worse_board = load_object!(Board, "better_than_dead-01-dead");
-        worse_board.max_snakes = 2;
-
-        let true_result = better_board.evaluate();
-        let false_result = worse_board.evaluate();
-
-        assert!(true_result[1] > false_result[1]);
-    }
-
-    #[test]
-    fn test_better_than_food() {
-        let better_board = load_object!(Board, "better_than_food-01-close");
-        let worse_board = load_object!(Board, "better_than_food-01-far");
-
-        let true_result = better_board.evaluate();
-        let false_result = worse_board.evaluate();
-
-        assert!(true_result[0] > false_result[0]);
-    }
-
-    #[test]
-    fn test_better_than_long() {
-        let better_board = load_object!(Board, "better_than_long-01-long");
-        let worse_board = load_object!(Board, "better_than_long-01-short");
-
-        let true_result = better_board.evaluate();
-        let false_result = worse_board.evaluate();
-
-        assert!(true_result[0] > false_result[0]);
-    }
-
     // draw()
     #[test]
     fn test_draw() {
-        let board = load_object!(Board, "empty_board-11x11");
+        let board = load_object!(Board, "empty_board-11x11", _TEST_PATH);
 
         let result = board.draw(String::from("empty_board-11x11"));
 
@@ -923,7 +528,7 @@ mod tests {
     // find_closest_food
     #[test]
     fn test_find_closest_food_none() {
-        let board = load_object!(Board, "find_closest_food_none-01");
+        let board = load_object!(Board, "find_closest_food_none-01", _TEST_PATH);
 
         let food = board.find_closest_food(board.get_snakes()[0].get_head());
 
@@ -932,7 +537,7 @@ mod tests {
 
     #[test]
     fn test_find_closest_food_one() {
-        let board = load_object!(Board, "find_closest_food_one-01");
+        let board = load_object!(Board, "find_closest_food_one-01", _TEST_PATH);
 
         let food = board.find_closest_food(board.get_snakes()[0].get_head());
 
@@ -941,7 +546,7 @@ mod tests {
 
     #[test]
     fn test_find_closest_food_two() {
-        let board = load_object!(Board, "find_closest_food_two-01");
+        let board = load_object!(Board, "find_closest_food_two-01", _TEST_PATH);
 
         let food = board.find_closest_food(board.get_snakes()[0].get_head());
 
@@ -951,7 +556,7 @@ mod tests {
     // find_weaker_snake()
     #[test]
     fn test_find_weaker_snake_none() {
-        let board = load_object!(Board, "find_weaker_snake_none-01");
+        let board = load_object!(Board, "find_weaker_snake_none-01", _TEST_PATH);
         let snake = &board.get_snakes()[0];
 
         let snake_head = board.find_weaker_snake(snake, 5);
@@ -961,7 +566,7 @@ mod tests {
 
     #[test]
     fn test_find_weaker_snake_one() {
-        let board = load_object!(Board, "find_weaker_snake_one-01");
+        let board = load_object!(Board, "find_weaker_snake_one-01", _TEST_PATH);
         let snake = &board.snakes[0];
 
         let snake_head = board.find_weaker_snake(snake, 5);
@@ -969,93 +574,10 @@ mod tests {
         assert_eq!(snake_head.unwrap(), board.snakes[1].get_head());
     }
 
-    // game_step()
-    #[test]
-    fn test_body_collision() {
-        let mut before_collision = load_object!(Board, "body_collision-01-before");
-        let mut after_collision = load_object!(Board, "body_collision-01-after");
-        after_collision.max_snakes = 2;
-
-        before_collision.game_step();
-        after_collision.turn += 1;
-
-        assert_eq!(before_collision, after_collision);
-    }
-
-    #[test]
-    fn test_double_headon_collision() {
-        let mut before_collision = load_object!(Board, "double_headon_collision-01-before");
-        let mut after_collision = load_object!(Board, "double_headon_collision-01-after");
-        after_collision.max_snakes = 3;
-
-        before_collision.game_step();
-        after_collision.turn += 1;
-
-        assert_eq!(before_collision, after_collision);
-    }
-
-    #[test]
-    fn test_eat_food() {
-        let mut before_eat = load_object!(Board, "eat-01-before");
-        let mut after_eat = load_object!(Board, "eat-01-after");
-
-        before_eat.game_step();
-        after_eat.turn += 1;
-
-        assert_eq!(before_eat, after_eat);
-    }
-
-    #[test]
-    fn test_headon_collision() {
-        let mut before_collision = load_object!(Board, "headon_collision-01-before");
-        let mut after_collision = load_object!(Board, "headon_collision-01-after");
-        after_collision.max_snakes = 2;
-
-        before_collision.game_step();
-        after_collision.turn += 1;
-
-        assert_eq!(before_collision, after_collision);
-    }
-
-    #[test]
-    fn test_out_of_bounds() {
-        let mut before = load_object!(Board, "out_of_bounds-01-before");
-        let mut after = load_object!(Board, "out_of_bounds-01-after");
-        after.max_snakes = 2;
-
-        before.game_step();
-        after.turn += 1;
-
-        assert_eq!(before, after);
-    }
-
-    #[test]
-    fn test_out_of_health() {
-        let mut before = load_object!(Board, "out_of_health-01-before");
-        let mut after = load_object!(Board, "out_of_health-01-after");
-        after.max_snakes = 2;
-
-        before.game_step();
-        after.turn += 1;
-
-        assert_eq!(before, after);
-    }
-
-    #[test]
-    fn test_simple() {
-        let mut before = load_object!(Board, "simple-02");
-        let mut after = load_object!(Board, "simple-02");
-
-        before.game_step();
-        after.turn += 1;
-
-        assert_eq!(before, after);
-    }
-
     // get_snake()
     #[test]
     fn test_get_snake_none() {
-        let board = load_object!(Board, "get_snake_none-01");
+        let board = load_object!(Board, "get_snake_none-01", _TEST_PATH);
 
         let snake = board.get_snake(1);
 
@@ -1064,7 +586,7 @@ mod tests {
 
     #[test]
     fn test_get_snake_one() {
-        let board = load_object!(Board, "get_snake_one-01");
+        let board = load_object!(Board, "get_snake_one-01", _TEST_PATH);
 
         let snake = board.get_snake(0);
 
@@ -1074,7 +596,7 @@ mod tests {
     // is_against_wall()
     #[test]
     fn test_is_against_wall_false() {
-        let board = load_object!(Board, "against_wall_false-01");
+        let board = load_object!(Board, "against_wall_false-01", _TEST_PATH);
 
         let result = board.is_against_wall(Coordinate::new(3, 2));
 
@@ -1083,27 +605,17 @@ mod tests {
 
     #[test]
     fn test_is_against_wall_true() {
-        let board = load_object!(Board, "against_wall_true-01");
+        let board = load_object!(Board, "against_wall_true-01", _TEST_PATH);
 
         let result = board.is_against_wall(Coordinate::new(0, 3));
 
         assert!(result);
     }
 
-    // minimax()
-    #[test]
-    fn test_minimax() {
-        let board = load_object!(Board, "test_board-03");
-
-        let result = board.minimax(0, 6);
-
-        assert!(result[0] > 0);
-    }
-
     // open_directions()
     #[test]
     fn test_open_directions_2() {
-        let board = load_object!(Board, "open_directions_2-01");
+        let board = load_object!(Board, "open_directions_2-01", _TEST_PATH);
         let snake = &board.get_snakes()[0];
 
         assert_eq!(board.open_directions(snake), 2);
@@ -1111,7 +623,7 @@ mod tests {
 
     #[test]
     fn test_open_directions_3() {
-        let board = load_object!(Board, "open_directions_3-01");
+        let board = load_object!(Board, "open_directions_3-01", _TEST_PATH);
         let snake = &board.get_snakes()[0];
 
         assert_eq!(board.open_directions(snake), 3);

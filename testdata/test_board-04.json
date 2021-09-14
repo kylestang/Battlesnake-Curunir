@@ -3,7 +3,21 @@
         "id": "2a5cc613-a968-41ac-a7a0-1bec44e08c17",
         "ruleset": {
             "name": "standard",
-            "version": "v.1.2.3"
+            "version": "v.1.2.3",
+            "settings": {
+                "foodSpawnChance": 25,
+                "minimumFood": 1,
+                "hazardDamagePerTurn": 14,
+                "royale": {
+                  "shrinkEveryNTurns": 5
+                },
+                "squad": {
+                  "allowBodyCollisions": true,
+                  "sharedElimination": true,
+                  "sharedHealth": true,
+                  "sharedLength": true
+                }
+            }
         },
         "timeout": 500
     },
