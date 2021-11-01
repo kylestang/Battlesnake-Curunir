@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 
-use crate::input_game::InputGame;
 use crate::input_board::InputBoard;
+use crate::input_game::InputGame;
 use crate::input_snake::InputSnake;
 
 #[derive(Debug, Deserialize, Serialize)]

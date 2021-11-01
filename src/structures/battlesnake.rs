@@ -38,24 +38,48 @@ impl Battlesnake {
         self.id
     }
 
+    pub fn set_id(&mut self, id: u8) {
+        self.id = id;
+    }
+
     pub fn get_health(&self) -> i32 {
         self.health
+    }
+
+    pub fn set_health(&mut self, health: i32) {
+        self.health = health;
     }
 
     pub fn get_body(&self) -> &VecDeque<Coordinate> {
         &self.body
     }
 
+    pub fn get_body_mut(&mut self) -> &mut VecDeque<Coordinate> {
+        &mut self.body
+    }
+
     pub fn _get_latency(&self) -> i32 {
         self.latency
+    }
+
+    pub fn set_latency(&mut self, latency: i32) {
+        self.latency = latency;
     }
 
     pub fn get_head(&self) -> Coordinate {
         self.head
     }
 
+    pub fn set_head(&mut self, head: Coordinate) {
+        self.head = head;
+    }
+
     pub fn get_length(&self) -> usize {
         self.length
+    }
+
+    pub fn set_length(&mut self, length: usize) {
+        self.length = length;
     }
 
     pub fn get_down(&self) -> Coordinate {
@@ -149,8 +173,8 @@ impl Battlesnake {
 
 #[cfg(test)]
 mod tests {
-    use crate::load_object;
     use crate::constants::_TEST_PATH;
+    use crate::load_object;
 
     // body_collision_with
     #[test]

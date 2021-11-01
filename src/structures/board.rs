@@ -1,5 +1,4 @@
 use image::{ImageResult, Rgb, RgbImage};
-use std::collections::{BTreeMap, VecDeque};
 
 use crate::battlesnake::Battlesnake;
 use crate::constants::{
@@ -14,7 +13,7 @@ pub struct Board {
     food: Vec<Coordinate>,
     hazards: Vec<Coordinate>,
     snakes: Vec<Battlesnake>,
-    max_snakes: u8,
+    max_snakes: usize,
     turn: i32,
 }
 
@@ -25,7 +24,7 @@ impl Board {
         food: Vec<Coordinate>,
         hazards: Vec<Coordinate>,
         snakes: Vec<Battlesnake>,
-        max_snakes: u8,
+        max_snakes: usize,
         turn: i32,
     ) -> Board {
         Board {
@@ -43,8 +42,16 @@ impl Board {
         self.height
     }
 
+    pub fn set_height(&mut self, height: i32) {
+        self.height = height;
+    }
+
     pub fn get_width(&self) -> i32 {
         self.width
+    }
+
+    pub fn set_width(&mut self, width: i32) {
+        self.width = width;
     }
 
     pub fn get_food(&self) -> &Vec<Coordinate> {
@@ -55,8 +62,12 @@ impl Board {
         &mut self.food
     }
 
-    pub fn _get_hazards(&self) -> &Vec<Coordinate> {
+    pub fn get_hazards(&self) -> &Vec<Coordinate> {
         &self.hazards
+    }
+
+    pub fn get_hazards_mut(&mut self) -> &mut Vec<Coordinate> {
+        &mut self.hazards
     }
 
     pub fn get_snakes(&self) -> &Vec<Battlesnake> {
@@ -67,11 +78,11 @@ impl Board {
         &mut self.snakes
     }
 
-    pub fn get_max_snakes(&self) -> u8 {
+    pub fn get_max_snakes(&self) -> usize {
         self.max_snakes
     }
 
-    pub fn set_max_snakes(&mut self, max_snakes: u8) {
+    pub fn set_max_snakes(&mut self, max_snakes: usize) {
         self.max_snakes = max_snakes;
     }
 
@@ -79,71 +90,8 @@ impl Board {
         self.turn
     }
 
-    pub fn area_controlled(&mut self) -> BTreeMap<u8, i32> {
-        #[derive(Clone, PartialEq)]
-        enum TileStatus {
-            Empty,
-            Gone,
-            Taken(u8),
-        }
-
-        // Initialization
-        let mut areas = BTreeMap::new();
-        //let mut snakes = self.snakes.clone();
-        self.snakes
-            .sort_unstable_by_key(|snake| 0 - snake.get_length() as i32);
-
-        let mut queue = VecDeque::new();
-
-        // pos(x,y) = grid[self.width * y + x]
-        let mut grid = vec![TileStatus::Empty; (self.height * self.width) as usize];
-
-        for snake in &self.snakes {
-            areas.insert(snake.get_id(), 0);
-            queue.push_back((snake.get_id(), snake.get_head()));
-
-            grid[(self.width * snake.get_head().get_y() + snake.get_head().get_x()) as usize] =
-                TileStatus::Taken(snake.get_id());
-
-            for pos in snake.get_body().range(1..snake.get_body().len() - 1) {
-                grid[(self.width * pos.get_y() + pos.get_x()) as usize] = TileStatus::Gone;
-            }
-        }
-
-        while let Some(current) = queue.pop_front() {
-            if grid[(self.width * current.1.get_y() + current.1.get_x()) as usize]
-                != TileStatus::Gone
-            {
-                for &pos in current
-                    .1
-                    .get_adjacent()
-                    .iter()
-                    .filter(|&&pos| !self.is_out_of_bounds(pos))
-                {
-                    let grid_value = (self.width * pos.get_y() + pos.get_x()) as usize;
-
-                    match grid[grid_value] {
-                        TileStatus::Empty => {
-                            grid[grid_value] = TileStatus::Taken(current.0);
-                            queue.push_back((current.0, pos));
-                            *areas.entry(current.0).or_insert(0) += 1;
-                        }
-                        TileStatus::Gone => (),
-                        TileStatus::Taken(snake_id) => {
-                            if current.0 != snake_id
-                                && self.get_snake(current.0).unwrap().get_length()
-                                    == self.get_snake(snake_id).unwrap().get_length()
-                            {
-                                grid[grid_value] = TileStatus::Gone;
-                                *areas.entry(snake_id).or_insert(0) -= 1;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        areas
+    pub fn set_turn(&mut self, turn: i32) {
+        self.turn = turn;
     }
 
     pub fn body_collision(&self, pos: Coordinate) -> bool {
@@ -192,12 +140,12 @@ impl Board {
                 if pos == *tile {
                     // If snake is me, subtract food from area. Return available area
                     if snake.get_id() == YOU_ID {
-                        if snake.get_length() - i - 1 > current_area as usize - food_eaten {
+                        if snake.get_length() - i >= current_area as usize - food_eaten {
                             return current_area;
                         } else {
                             return max_area;
                         }
-                    } else if snake.get_length() - i - 1 > current_area as usize {
+                    } else if snake.get_length() - i >= current_area as usize {
                         return current_area;
                     } else {
                         return max_area;
@@ -447,42 +395,8 @@ impl Board {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::load_object;
     use crate::constants::_TEST_PATH;
-    // area_controlled
-    #[test]
-    fn test_area_controlled_one() {
-        let mut board = load_object!(Board, "simple-01", _TEST_PATH);
-
-        let result = board.area_controlled();
-        let mut correct = BTreeMap::new();
-        correct.insert(0, 47);
-        assert_eq!(result, correct)
-    }
-
-    #[test]
-    fn test_area_controlled_two() {
-        let mut board = load_object!(Board, "simple-02", _TEST_PATH);
-
-        let result = board.area_controlled();
-        let mut correct = BTreeMap::new();
-        correct.insert(0, 19);
-        correct.insert(1, 19);
-        assert_eq!(result, correct)
-    }
-
-    #[test]
-    fn test_area_controlled_three() {
-        let mut board = load_object!(Board, "test_board-04", _TEST_PATH);
-
-        let result = board.area_controlled();
-        let mut correct = BTreeMap::new();
-        correct.insert(0, 32);
-        correct.insert(1, 39);
-        correct.insert(2, 17);
-        assert_eq!(result, correct)
-    }
-
+    use crate::load_object;
     // check_area
     #[test]
     fn test_check_area_closed() {

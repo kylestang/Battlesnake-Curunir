@@ -27,18 +27,6 @@ impl Game {
         }
     }
 
-    pub fn _get_id(&self) -> &String {
-        &self.id
-    }
-
-    pub fn _get_ruleset(&self) -> &Ruleset {
-        &self.ruleset
-    }
-
-    pub fn _get_timeout(&self) -> i32 {
-        self.timeout
-    }
-
     // Returns the direction to go based on the game board
     pub fn calculate_move(&self, board: Board) -> String {
         // Calculate max recursion depth
@@ -357,9 +345,9 @@ right result: {}
 
 #[cfg(test)]
 mod tests {
+    use crate::constants::_TEST_PATH;
     use crate::load_object;
     use crate::move_request::MoveRequest;
-    use crate::constants::_TEST_PATH;
 
     #[test]
     fn test_decision() {

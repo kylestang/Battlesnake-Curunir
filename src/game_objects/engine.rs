@@ -1,13 +1,11 @@
 use crate::board::Board;
 use crate::ruleset::Ruleset;
 
-pub struct Engine {
-}
+pub struct Engine {}
 
 impl Engine {
     pub fn new() -> Engine {
-        Engine {
-        }
+        Engine {}
     }
 
     pub fn game_step(&self, board: &mut Board, ruleset: &Ruleset) {
@@ -81,8 +79,8 @@ impl Engine {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::load_object;
     use crate::constants::_TEST_PATH;
+    use crate::load_object;
 
     // game_step()
     #[test]
@@ -99,8 +97,10 @@ mod tests {
 
     #[test]
     fn test_double_headon_collision() {
-        let mut before_collision = load_object!(Board, "double_headon_collision-01-before", _TEST_PATH);
-        let mut after_collision = load_object!(Board, "double_headon_collision-01-after", _TEST_PATH);
+        let mut before_collision =
+            load_object!(Board, "double_headon_collision-01-before", _TEST_PATH);
+        let mut after_collision =
+            load_object!(Board, "double_headon_collision-01-after", _TEST_PATH);
         let ruleset = load_object!(Ruleset, "double_headon_collision-01-before", _TEST_PATH);
         after_collision.set_max_snakes(3);
 

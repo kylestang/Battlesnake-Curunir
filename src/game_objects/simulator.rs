@@ -5,14 +5,12 @@ use crate::evaluator::Evaluator;
 use crate::ruleset::Ruleset;
 
 pub struct Simulator {
-    ruleset: Ruleset
+    ruleset: Ruleset,
 }
 
 impl Simulator {
     pub fn new(ruleset: Ruleset) -> Simulator {
-        Simulator {
-            ruleset
-        }
+        Simulator { ruleset }
     }
 
     // Moves self down and predicts future turns
@@ -223,8 +221,8 @@ impl Simulator {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::load_object;
     use crate::constants::_TEST_PATH;
+    use crate::load_object;
     // minimax()
     #[test]
     fn test_minimax() {

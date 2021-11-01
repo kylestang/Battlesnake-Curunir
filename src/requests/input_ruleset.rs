@@ -36,6 +36,7 @@ impl InputRuleset {
     }
 }
 
+#[allow(non_snake_case)]
 #[derive(Debug, Deserialize, Serialize)]
 pub struct InputSettings {
     foodSpawnChance: i32,
@@ -64,8 +65,10 @@ impl InputSettings {
     }
 }
 
+#[allow(non_snake_case)]
 #[derive(Debug, Deserialize, Serialize)]
 pub struct InputRoyale {
+    #[allow(non_snake_case)]
     shrinkEveryNTurns: i32,
 }
 
@@ -75,6 +78,7 @@ impl InputRoyale {
     }
 }
 
+#[allow(non_snake_case)]
 #[derive(Debug, Deserialize, Serialize)]
 pub struct InputSquad {
     allowBodyCollisions: bool,

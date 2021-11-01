@@ -41,7 +41,7 @@ impl InputBoard {
             self.food,
             self.hazards,
             snakes,
-            num_snakes as u8,
+            num_snakes,
             turn,
         )
     }
