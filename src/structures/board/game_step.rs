@@ -1,31 +1,25 @@
 use crate::board::Board;
 use crate::ruleset::Ruleset;
 
-pub struct Engine {}
-
-impl Engine {
-    pub fn new() -> Engine {
-        Engine {}
-    }
-
-    pub fn game_step(&self, board: &mut Board, ruleset: &Ruleset) {
+impl Board {
+    pub fn game_step(&mut self, ruleset: &Ruleset) {
         // Check all food
         let mut i = 0;
 
-        while i < board.get_food().len() {
+        while i < self.food.len() {
             let mut food_eaten = false;
 
             // Check all snakes
-            for j in 0..board.get_snakes().len() {
-                if board.get_snakes()[j].get_head() == board.get_food_mut()[i] {
+            for j in 0..self.snakes.len() {
+                if self.snakes[j].get_head() == self.food[i] {
                     food_eaten = true;
-                    board.get_snakes_mut()[j].eat_food();
+                    self.snakes[j].eat_food();
                 }
             }
 
             // Remove food if eaten
             if food_eaten {
-                board.get_food_mut().swap_remove(i);
+                self.food.swap_remove(i);
             } else {
                 i += 1;
             }
@@ -43,24 +37,24 @@ impl Engine {
         // Eliminate snakes that are out of health or out of bounds
         let mut i = 0;
 
-        while i < board.get_snakes().len() {
-            let snake = &board.get_snakes()[i];
+        while i < self.snakes.len() {
+            let snake = &self.snakes[i];
             let x = snake.get_head().get_x();
             let y = snake.get_head().get_y();
 
             if snake.get_health() < ruleset.get_minimum_food()
-                || (x < 0 || x > board.get_width() - 1 || y < 0 || y > board.get_height() - 1)
+                || (x < 0 || x > self.width - 1 || y < 0 || y > self.height - 1)
             {
-                board.get_snakes_mut().remove(i);
+                self.snakes.remove(i);
             } else {
                 i += 1;
             }
         }
 
         // Check for collisions
-        let mut to_remove = Vec::with_capacity(board.get_snakes().len());
-        for snake in board.get_snakes() {
-            for other_snake in board.get_snakes() {
+        let mut to_remove = Vec::with_capacity(self.snakes.len());
+        for snake in &self.snakes {
+            for other_snake in &self.snakes {
                 if snake.lost_headon(other_snake) || snake.body_collision_with(other_snake) {
                     to_remove.push(snake.get_id());
                     break;
@@ -68,17 +62,15 @@ impl Engine {
             }
         }
 
-        board
-            .get_snakes_mut()
+        self.get_snakes_mut()
             .retain(|snake| !to_remove.contains(&snake.get_id()));
 
-        board.increment_turn();
+        self.increment_turn();
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use crate::constants::_TEST_PATH;
     use crate::load_object;
 
@@ -90,7 +82,7 @@ mod tests {
         let ruleset = load_object!(Ruleset, "body_collision-01-before", _TEST_PATH);
         after_collision.set_max_snakes(2);
 
-        Engine::new().game_step(&mut before_collision, &ruleset);
+        before_collision.game_step(&ruleset);
 
         assert_eq!(before_collision, after_collision);
     }
@@ -104,7 +96,7 @@ mod tests {
         let ruleset = load_object!(Ruleset, "double_headon_collision-01-before", _TEST_PATH);
         after_collision.set_max_snakes(3);
 
-        Engine::new().game_step(&mut before_collision, &ruleset);
+        before_collision.game_step(&ruleset);
 
         assert_eq!(before_collision, after_collision);
     }
@@ -115,7 +107,7 @@ mod tests {
         let after_eat = load_object!(Board, "eat-01-after", _TEST_PATH);
         let ruleset = load_object!(Ruleset, "eat-01-before", _TEST_PATH);
 
-        Engine::new().game_step(&mut before_eat, &ruleset);
+        before_eat.game_step(&ruleset);
 
         assert_eq!(before_eat, after_eat);
     }
@@ -127,7 +119,7 @@ mod tests {
         let ruleset = load_object!(Ruleset, "headon_collision-01-before", _TEST_PATH);
         after_collision.set_max_snakes(2);
 
-        Engine::new().game_step(&mut before_collision, &ruleset);
+        before_collision.game_step(&ruleset);
 
         assert_eq!(before_collision, after_collision);
     }
@@ -139,7 +131,7 @@ mod tests {
         let ruleset = load_object!(Ruleset, "out_of_bounds-01-before", _TEST_PATH);
         after.set_max_snakes(2);
 
-        Engine::new().game_step(&mut before, &ruleset);
+        before.game_step(&ruleset);
 
         assert_eq!(before, after);
     }
@@ -151,7 +143,7 @@ mod tests {
         let ruleset = load_object!(Ruleset, "out_of_health-01-before", _TEST_PATH);
         after.set_max_snakes(2);
 
-        Engine::new().game_step(&mut before, &ruleset);
+        before.game_step(&ruleset);
 
         assert_eq!(before, after);
     }
@@ -162,7 +154,7 @@ mod tests {
         let after = load_object!(Board, "no_change-01-after", _TEST_PATH);
         let ruleset = load_object!(Ruleset, "no_change-01-before", _TEST_PATH);
 
-        Engine::new().game_step(&mut before, &ruleset);
+        before.game_step(&ruleset);
 
         assert_eq!(before, after);
     }

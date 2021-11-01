@@ -2,24 +2,10 @@ use std::collections::VecDeque;
 
 use crate::board::Board;
 use crate::constants::{DIRECTIONS, YOU_ID};
-use crate::engine::Engine;
 use crate::ruleset::Ruleset;
 
-pub struct Mapper {
-    board: Board,
-}
-
-impl Mapper {
-    pub fn new(mut board: Board) -> Mapper {
-        // Thanks to Hannah for the idea to sort by length
-        board
-            .get_snakes_mut()
-            .sort_unstable_by_key(|snake| 0 - snake.get_length() as i32);
-
-        Mapper { board }
-    }
-
-    pub fn area_controlled(&self, board: &mut Board) -> Vec<i32> {
+impl Board {
+    pub fn area_controlled(&self) -> Vec<i32> {
         #[derive(Clone, Copy, PartialEq)]
         enum TileStatus {
             Empty,
@@ -28,35 +14,34 @@ impl Mapper {
         }
 
         // Initialization
-        let mut areas = vec![0; board.get_max_snakes()];
+        let mut areas = vec![0; self.max_snakes];
 
-        let mut queue = VecDeque::with_capacity(board.get_height() as usize);
+        let mut queue = VecDeque::with_capacity(self.height as usize);
 
         // pos(x,y) = grid[board.get_width() * y + x]
-        let mut grid = vec![TileStatus::Empty; (board.get_height() * board.get_width()) as usize];
+        let mut grid = vec![TileStatus::Empty; (self.height * self.width) as usize];
 
-        let board_width = board.get_width();
-        for snake in board.get_snakes_mut() {
+        for snake in &self.snakes {
             queue.push_back((snake.get_id(), snake.get_head()));
 
-            grid[(board_width * snake.get_head().get_y() + snake.get_head().get_x()) as usize] =
+            grid[(self.width * snake.get_head().get_y() + snake.get_head().get_x()) as usize] =
                 TileStatus::Taken(snake.get_id());
 
             for pos in snake.get_body().range(1..snake.get_body().len() - 1) {
-                grid[(board_width * pos.get_y() + pos.get_x()) as usize] = TileStatus::Gone;
+                grid[(self.width * pos.get_y() + pos.get_x()) as usize] = TileStatus::Gone;
             }
         }
 
         while let Some((current_snake_id, current_pos)) = queue.pop_front() {
-            if grid[(board.get_width() * current_pos.get_y() + current_pos.get_x()) as usize]
+            if grid[(self.width * current_pos.get_y() + current_pos.get_x()) as usize]
                 != TileStatus::Gone
             {
                 for &pos in current_pos
                     .get_adjacent()
                     .iter()
-                    .filter(|&&pos| !board.is_out_of_bounds(pos))
+                    .filter(|&&pos| !self.is_out_of_bounds(pos))
                 {
-                    let grid_value = (board.get_width() * pos.get_y() + pos.get_x()) as usize;
+                    let grid_value = (self.width * pos.get_y() + pos.get_x()) as usize;
 
                     match grid[grid_value] {
                         TileStatus::Empty => {
@@ -67,8 +52,8 @@ impl Mapper {
                         TileStatus::Gone => (),
                         TileStatus::Taken(other_snake_id) => {
                             if current_snake_id != other_snake_id
-                                && board.get_snake(current_snake_id).unwrap().get_length()
-                                    == board.get_snake(other_snake_id).unwrap().get_length()
+                                && self.get_snake(current_snake_id).unwrap().get_length()
+                                    == self.get_snake(other_snake_id).unwrap().get_length()
                             {
                                 grid[grid_value] = TileStatus::Gone;
                                 areas[other_snake_id as usize] -= 1;
@@ -84,11 +69,11 @@ impl Mapper {
     pub fn calculate_areas(&self, ruleset: &Ruleset) -> [i32; 4] {
         let mut values = [Vec::new(), Vec::new(), Vec::new(), Vec::new()];
 
-        let num_snakes = self.board.get_snakes().len();
+        let num_snakes = self.snakes.len();
         let iterations = (DIRECTIONS + 1).pow(num_snakes as u32);
 
         for i in 0..iterations {
-            let mut new_board = self.board.clone();
+            let mut new_board = self.clone();
             let mut direction = 0;
 
             for j in 0..num_snakes {
@@ -100,9 +85,9 @@ impl Mapper {
                 snake.move_to(pos);
             }
 
-            Engine::new().game_step(&mut new_board, ruleset);
+            new_board.game_step(ruleset);
 
-            let area = self.area_controlled(&mut new_board)[YOU_ID as usize];
+            let area = self.area_controlled()[YOU_ID as usize];
 
             values[direction].push(area);
         }
@@ -128,20 +113,18 @@ impl Mapper {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use crate::constants::_TEST_PATH;
     use crate::load_object;
     // area_controlled
     #[test]
     fn test_area_controlled_one() {
         let mut board = load_object!(Board, "simple-01", _TEST_PATH);
-        let mapper = Mapper::new(board.clone());
 
         board
             .get_snakes_mut()
             .sort_unstable_by_key(|snake| 0 - snake.get_length() as i32);
 
-        let result = mapper.area_controlled(&mut board);
+        let result = board.area_controlled();
         let mut correct = Vec::new();
         correct.insert(0, 47);
         assert_eq!(result, correct)
@@ -150,13 +133,11 @@ mod tests {
     #[test]
     fn test_area_controlled_two() {
         let mut board = load_object!(Board, "simple-02", _TEST_PATH);
-        let mapper = Mapper::new(board.clone());
-
         board
             .get_snakes_mut()
             .sort_unstable_by_key(|snake| 0 - snake.get_length() as i32);
 
-        let result = mapper.area_controlled(&mut board);
+        let result = board.area_controlled();
         let mut correct = Vec::new();
         correct.insert(0, 19);
         correct.insert(1, 19);
@@ -166,13 +147,11 @@ mod tests {
     #[test]
     fn test_area_controlled_three() {
         let mut board = load_object!(Board, "test_board-04", _TEST_PATH);
-        let mapper = Mapper::new(board.clone());
-
         board
             .get_snakes_mut()
             .sort_unstable_by_key(|snake| 0 - snake.get_length() as i32);
 
-        let result = mapper.area_controlled(&mut board);
+        let result = board.area_controlled();
         let mut correct = Vec::new();
         correct.insert(0, 32);
         correct.insert(1, 39);
@@ -185,9 +164,8 @@ mod tests {
     fn test_calculate_areas_one() {
         let board = load_object!(Board, "simple-01", _TEST_PATH);
         let ruleset = load_object!(Ruleset, "simple-01", _TEST_PATH);
-        let mapper = Mapper::new(board);
 
-        let areas = mapper.calculate_areas(&ruleset);
+        let areas = board.calculate_areas(&ruleset);
 
         assert_eq!(areas, [0, 47, 47, 47]);
     }

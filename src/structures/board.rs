@@ -1,3 +1,8 @@
+pub mod area_controlled;
+pub mod evaluate;
+pub mod game_step;
+pub mod simulate;
+
 use image::{ImageResult, Rgb, RgbImage};
 
 use crate::battlesnake::Battlesnake;

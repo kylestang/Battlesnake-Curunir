@@ -1,8 +1,5 @@
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
 use curunir::constants;
-use curunir::game_objects::engine::Engine;
-use curunir::game_objects::mapper::Mapper;
-use curunir::game_objects::simulator::Simulator;
 use curunir::load_object;
 use curunir::requests::*;
 use curunir::structures::coordinate::Coordinate;
@@ -10,12 +7,9 @@ use curunir::structures::coordinate::Coordinate;
 use std::cmp::max;
 
 pub fn area_controlled_bench(c: &mut Criterion) {
-    let mut board = load_object!(Board, "test_board-03", constants::_TEST_PATH);
-    let mapper = Mapper::new(board.clone());
+    let board = load_object!(Board, "test_board-03", constants::_TEST_PATH);
 
-    c.bench_function("area_controlled", |b| {
-        b.iter(|| mapper.area_controlled(&mut board))
-    });
+    c.bench_function("area_controlled", |b| b.iter(|| board.area_controlled()));
 }
 
 pub fn body_collision_with_bench(c: &mut Criterion) {
@@ -59,10 +53,9 @@ pub fn get_option_bench(c: &mut Criterion) {
 pub fn game_step_bench(c: &mut Criterion) {
     let board = black_box(load_object!(Board, "food-01", constants::_TEST_PATH));
     let ruleset = load_object!(Ruleset, "food-01", constants::_TEST_PATH);
-    let engine = Engine::new();
 
     c.bench_function("game_step", |b| {
-        b.iter(|| engine.game_step(&mut board.clone(), &ruleset))
+        b.iter(|| board.clone().game_step(&ruleset))
     });
 }
 
@@ -74,10 +67,9 @@ pub fn minimax_bench(c: &mut Criterion) {
         1,
     ));
     let ruleset = load_object!(Ruleset, "test_board-03", constants::_TEST_PATH);
-    let simulator = Simulator::new(ruleset);
 
     c.bench_function("minimax", |b| {
-        b.iter(|| simulator.minimax(board.clone(), current, max_depth))
+        b.iter(|| board.clone().minimax(&ruleset, current, max_depth))
     });
 }
 
@@ -89,10 +81,9 @@ pub fn minimax_8_bench(c: &mut Criterion) {
         1,
     ));
     let ruleset = load_object!(Ruleset, "test_board-05", constants::_TEST_PATH);
-    let simulator = Simulator::new(ruleset);
 
     c.bench_function("minimax", |b| {
-        b.iter(|| simulator.minimax(board.clone(), current, max_depth))
+        b.iter(|| board.clone().minimax(&ruleset, current, max_depth))
     });
 }
 
