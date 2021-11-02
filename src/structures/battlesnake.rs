@@ -151,6 +151,45 @@ impl Battlesnake {
         result
     }
 
+    // Takes a direction without tail and returns absolute direction
+    // Inverse of get_option
+    pub fn get_direction(&self, direction: usize) -> usize {
+        let second = self.body[1];
+        let result;
+
+        if second == self.get_down() {
+            result = match direction {
+                0 => 1,
+                1 => 2,
+                2 => 3,
+                _ => panic!("Wrong direction"),
+            };
+        } else if second == self.get_up() {
+            result = match direction {
+                0 => 0,
+                1 => 2,
+                2 => 3,
+                _ => panic!("Wrong direction"),
+            }
+        } else if second == self.get_right() {
+            result = match direction {
+                0 => 0,
+                1 => 1,
+                2 => 3,
+                _ => panic!("Wrong direction"),
+            }
+        } else {
+            result = match direction {
+                0 => 0,
+                1 => 1,
+                2 => 2,
+                _ => panic!("Wrong direction"),
+            }
+        }
+
+        result
+    }
+
     // Returns true if self lost head-to-head against other
     pub fn lost_headon(&self, other: &Battlesnake) -> bool {
         self.id != other.get_id()

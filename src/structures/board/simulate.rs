@@ -84,7 +84,7 @@ impl Board {
             }
 
             // Get the maximin result from this position
-            let result = self.minimax(ruleset, current_level + 1, max_level);
+            let result = new_board.minimax(ruleset, current_level + 1, max_level);
 
             // Update worst outcomes
             for (j, snake_boards) in worst_boards.iter_mut().enumerate() {
@@ -223,7 +223,7 @@ mod tests {
         let board = load_object!(Board, "test_board-03", _TEST_PATH);
         let ruleset = load_object!(Ruleset, "test_board-03", _TEST_PATH);
 
-        let result = board.minimax(&ruleset, 0, 6);
+        let result = board.minimax(&ruleset, 0, 2);
 
         assert!(result[0] > 0);
     }

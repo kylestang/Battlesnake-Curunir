@@ -70,7 +70,7 @@ impl Board {
         let mut values = [Vec::new(), Vec::new(), Vec::new(), Vec::new()];
 
         let num_snakes = self.snakes.len();
-        let iterations = (DIRECTIONS + 1).pow(num_snakes as u32);
+        let iterations = DIRECTIONS.pow(num_snakes as u32);
 
         for i in 0..iterations {
             let mut new_board = self.clone();
@@ -79,7 +79,7 @@ impl Board {
             for j in 0..num_snakes {
                 let snake = &mut new_board.get_snakes_mut()[j];
                 if snake.get_id() == YOU_ID {
-                    direction = (i / DIRECTIONS.pow(j as u32)) % DIRECTIONS;
+                    direction = snake.get_direction((i / DIRECTIONS.pow(j as u32)) % DIRECTIONS);
                 }
                 let pos = snake.get_option((i / DIRECTIONS.pow(j as u32)) % DIRECTIONS);
                 snake.move_to(pos);
@@ -87,26 +87,16 @@ impl Board {
 
             new_board.game_step(ruleset);
 
-            let area = self.area_controlled()[YOU_ID as usize];
+            let area = new_board.area_controlled()[YOU_ID as usize];
 
             values[direction].push(area);
         }
 
-        for vector in &mut values {
-            if vector.is_empty() {
-                vector.push(0);
-            } else {
-                vector.sort_unstable();
-            }
-        }
-
-        let median_index = values[0].len() / 2;
-
         [
-            values[0][median_index],
-            values[1][median_index],
-            values[2][median_index],
-            values[3][median_index],
+            *values[0].iter().min().unwrap_or(&0),
+            *values[1].iter().min().unwrap_or(&0),
+            *values[2].iter().min().unwrap_or(&0),
+            *values[3].iter().min().unwrap_or(&0),
         ]
     }
 }
@@ -168,5 +158,15 @@ mod tests {
         let areas = board.calculate_areas(&ruleset);
 
         assert_eq!(areas, [0, 47, 47, 47]);
+    }
+
+    #[test]
+    fn test_calculate_areas_two() {
+        let board = load_object!(Board, "test_board-04", _TEST_PATH);
+        let ruleset = load_object!(Ruleset, "test_board-04", _TEST_PATH);
+
+        let areas = board.calculate_areas(&ruleset);
+
+        assert_eq!(areas, [0, 0, 1, 30])
     }
 }

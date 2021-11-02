@@ -96,61 +96,6 @@ pub fn open_directions_bench(c: &mut Criterion) {
     });
 }
 
-pub fn board_clone_bench(c: &mut Criterion) {
-    let board_1 = load_object!(Board, "test_board-04", constants::_TEST_PATH);
-    let mut board_2 = load_object!(Board, "test_board-03", constants::_TEST_PATH);
-
-    c.bench_function("board_clone", |b| b.iter(|| board_2 = board_1.clone()));
-}
-
-pub fn board_duplicate_bench(c: &mut Criterion) {
-    let board_1 = load_object!(Board, "test_board-04", constants::_TEST_PATH);
-
-    let mut board_2 = load_object!(Board, "test_board-03", constants::_TEST_PATH);
-
-    c.bench_function("board_duplicate", |b| {
-        b.iter(|| {
-            board_2.set_height(board_1.get_height());
-            board_2.set_width(board_1.get_width());
-
-            board_2
-                .get_food_mut()
-                .resize_with(board_1.get_food().len(), Default::default);
-            board_2.get_food_mut().copy_from_slice(board_1.get_food());
-
-            board_2
-                .get_hazards_mut()
-                .resize_with(board_1.get_hazards().len(), Default::default);
-            board_2
-                .get_hazards_mut()
-                .copy_from_slice(board_1.get_hazards());
-
-            board_2
-                .get_snakes_mut()
-                .resize_with(board_1.get_snakes().len(), Default::default);
-            //board_2.get_snakes_mut().clone_from_slice(board_1.get_snakes());
-
-            for i in 0..board_1.get_snakes().len() {
-                let snake_1 = &board_1.get_snakes()[i];
-                let snake_2 = &mut board_2.get_snakes_mut()[i];
-
-                snake_2.set_id(snake_1.get_id());
-                snake_2.set_health(snake_1.get_health());
-
-                snake_2.get_body_mut().clear();
-                snake_2.get_body_mut().extend(snake_1.get_body().iter());
-
-                snake_2.set_latency(snake_1._get_latency());
-                snake_2.set_head(snake_1.get_head());
-                snake_2.set_length(snake_1.get_length());
-            }
-
-            board_2.set_max_snakes(board_1.get_max_snakes());
-            board_2.set_turn(board_1.get_turn());
-        })
-    });
-}
-
 criterion_group!(
     benches,
     body_collision_with_bench,
@@ -161,8 +106,6 @@ criterion_group!(
     open_directions_bench,
     check_area_bench,
     area_controlled_bench,
-    board_clone_bench,
-    board_duplicate_bench
 );
 
 criterion_main!(benches);

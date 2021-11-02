@@ -47,16 +47,8 @@ impl Board {
         self.height
     }
 
-    pub fn set_height(&mut self, height: i32) {
-        self.height = height;
-    }
-
     pub fn get_width(&self) -> i32 {
         self.width
-    }
-
-    pub fn set_width(&mut self, width: i32) {
-        self.width = width;
     }
 
     pub fn get_food(&self) -> &Vec<Coordinate> {
@@ -145,7 +137,7 @@ impl Board {
                 if pos == *tile {
                     // If snake is me, subtract food from area. Return available area
                     if snake.get_id() == YOU_ID {
-                        if snake.get_length() - i >= current_area as usize - food_eaten {
+                        if snake.get_length() - i > current_area as usize - food_eaten {
                             return current_area;
                         } else {
                             return max_area;
@@ -423,7 +415,6 @@ mod tests {
         assert_eq!(result, 30);
     }
 
-    // TODO get new test case
     #[test]
     fn test_check_area_route() {
         let board = load_object!(Board, "check_area_route-01", _TEST_PATH);
@@ -434,12 +425,22 @@ mod tests {
         assert_eq!(result, 10);
     }
 
+    #[test]
+    fn test_check_area_food() {
+        let board = load_object!(Board, "check_area_route-02", _TEST_PATH);
+        let pos = board.get_snakes()[0].get_head().get_down();
+
+        let result = board.check_area(pos, 0, 27, &mut Vec::with_capacity(10), 0);
+
+        assert_eq!(result, 27);
+    }
+
     // draw()
     #[test]
     fn test_draw() {
-        let board = load_object!(Board, "empty_board-11x11", _TEST_PATH);
+        let board = load_object!(Board, "check_area_route-02", _TEST_PATH);
 
-        let result = board.draw(String::from("empty_board-11x11"));
+        let result = board.draw(String::from("check_area_route-02"));
 
         assert!(result.is_ok());
     }
