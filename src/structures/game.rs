@@ -82,7 +82,7 @@ impl Game {
         let down_area_board = board.clone();
         let (down_area_tx, down_area_rx) = mpsc::channel();
         let down_area_handle = spawn(move || {
-            let down_area = down_area_board.check_area(
+            let down_area = down_area_board.longest_path(
                 current_pos.get_down(),
                 0,
                 max_search,
@@ -96,7 +96,7 @@ impl Game {
         let up_area_board = board.clone();
         let (up_area_tx, up_area_rx) = mpsc::channel();
         let up_area_handle = spawn(move || {
-            let up_area = up_area_board.check_area(
+            let up_area = up_area_board.longest_path(
                 current_pos.get_up(),
                 0,
                 max_search,
@@ -110,7 +110,7 @@ impl Game {
         let right_area_board = board.clone();
         let (right_area_tx, right_area_rx) = mpsc::channel();
         let right_area_handle = spawn(move || {
-            let right_area = right_area_board.check_area(
+            let right_area = right_area_board.longest_path(
                 current_pos.get_right(),
                 0,
                 max_search,
@@ -124,7 +124,7 @@ impl Game {
         let left_area_board = board.clone();
         let (left_area_tx, left_area_rx) = mpsc::channel();
         let left_area_handle = spawn(move || {
-            let left_area = left_area_board.check_area(
+            let left_area = left_area_board.longest_path(
                 current_pos.get_left(),
                 0,
                 max_search,

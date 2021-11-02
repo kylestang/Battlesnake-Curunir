@@ -31,7 +31,7 @@ pub fn check_area_bench(c: &mut Criterion) {
 
     c.bench_function("check_area", |b| {
         b.iter(|| {
-            board.check_area(
+            board.longest_path(
                 Coordinate::new(7, 10),
                 0,
                 30,
