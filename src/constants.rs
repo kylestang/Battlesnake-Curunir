@@ -1,9 +1,9 @@
 // Snake details
 pub const API_VERSION: &str = "1";
 pub const AUTHOR: &str = "Kyle Stang";
-pub const COLOR: &str = "#C6C6C6";
-pub const HEAD: &str = "evil";
-pub const TAIL: &str = "sharp";
+pub const COLOR: &str = "#808080";
+pub const HEAD: &str = "smile";
+pub const TAIL: &str = "bolt";
 
 // Game constants
 pub const DIRECTIONS: usize = 3;
