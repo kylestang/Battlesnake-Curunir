@@ -24,13 +24,11 @@ async fn start() -> HttpResponse {
 async fn game_move(data: web::Json<MoveRequest>) -> HttpResponse {
     println!("Move");
     // Get data from MoveRequest
-    let values = data.into_inner().into_values();
+    let (game, turn, input_board, you) = data.into_inner().into_values();
     // Create Board from InputBoard
-    let board = values.2.into_board(values.3, values.1);
-    // Get game from MoveRequest
-    let game = values.0;
+    let board = input_board.into_board(you, turn);
     // Respond with direction
-    let direction = game.decision(board);
+    let direction = game.into_game().calculate_move(board);
     HttpResponse::Ok().json(MoveResponse::new(direction, String::from("Hi!")))
 }
 
@@ -61,48 +59,7 @@ mod tests {
     use super::*;
 
     use actix_web::test;
-
-    macro_rules! load_object {
-        (Board, $filename:expr) => {{
-            let file: std::fs::File = std::fs::OpenOptions::new()
-                .read(true)
-                .open(format!(
-                    "{}{}.json",
-                    curunir::constants::_TEST_PATH,
-                    $filename
-                ))
-                .unwrap();
-            let board: crate::move_request::MoveRequest = serde_json::from_reader(file).unwrap();
-            let board = board.into_values();
-            let board = board.2.into_board(board.3, 0);
-            board
-        }};
-        (Battlesnake, $filename:expr) => {{
-            let file: std::fs::File = std::fs::OpenOptions::new()
-                .read(true)
-                .open(format!(
-                    "{}{}.json",
-                    curunir::constants::_TEST_PATH,
-                    $filename
-                ))
-                .unwrap();
-            let snake: crate::input_snake::InputSnake = from_reader(file).unwrap();
-            let snake = snake.into_battlesnake();
-            snake
-        }};
-        ($type:ident, $filename:expr) => {{
-            let file: std::fs::File = std::fs::OpenOptions::new()
-                .read(true)
-                .open(format!(
-                    "{}{}.json",
-                    curunir::constants::_TEST_PATH,
-                    $filename
-                ))
-                .unwrap();
-            let object: $type = serde_json::from_reader(file).unwrap();
-            object
-        }};
-    }
+    use curunir::load_object;
 
     #[actix_rt::test]
     async fn test_index_get() {
@@ -117,7 +74,7 @@ mod tests {
 
     #[actix_rt::test]
     async fn test_move_post() {
-        let data = load_object!(MoveRequest, "simple-02");
+        let data = load_object!(MoveRequest, "simple-02", _TEST_PATH);
 
         let mut app = test::init_service(App::new().service(game_move)).await;
         let req = test::TestRequest::post()

@@ -4,7 +4,7 @@ use crate::constants::MAX_HEALTH;
 use crate::coordinate::Coordinate;
 
 // Define the Battlesnake struct
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub struct Battlesnake {
     id: u8,
     health: i32,
@@ -38,24 +38,48 @@ impl Battlesnake {
         self.id
     }
 
+    pub fn set_id(&mut self, id: u8) {
+        self.id = id;
+    }
+
     pub fn get_health(&self) -> i32 {
         self.health
+    }
+
+    pub fn set_health(&mut self, health: i32) {
+        self.health = health;
     }
 
     pub fn get_body(&self) -> &VecDeque<Coordinate> {
         &self.body
     }
 
+    pub fn get_body_mut(&mut self) -> &mut VecDeque<Coordinate> {
+        &mut self.body
+    }
+
     pub fn _get_latency(&self) -> i32 {
         self.latency
+    }
+
+    pub fn set_latency(&mut self, latency: i32) {
+        self.latency = latency;
     }
 
     pub fn get_head(&self) -> Coordinate {
         self.head
     }
 
+    pub fn set_head(&mut self, head: Coordinate) {
+        self.head = head;
+    }
+
     pub fn get_length(&self) -> usize {
         self.length
+    }
+
+    pub fn set_length(&mut self, length: usize) {
+        self.length = length;
     }
 
     pub fn get_down(&self) -> Coordinate {
@@ -127,6 +151,45 @@ impl Battlesnake {
         result
     }
 
+    // Takes a direction without tail and returns absolute direction
+    // Inverse of get_option
+    pub fn get_direction(&self, direction: usize) -> usize {
+        let second = self.body[1];
+        let result;
+
+        if second == self.get_down() {
+            result = match direction {
+                0 => 1,
+                1 => 2,
+                2 => 3,
+                _ => panic!("Wrong direction"),
+            };
+        } else if second == self.get_up() {
+            result = match direction {
+                0 => 0,
+                1 => 2,
+                2 => 3,
+                _ => panic!("Wrong direction"),
+            }
+        } else if second == self.get_right() {
+            result = match direction {
+                0 => 0,
+                1 => 1,
+                2 => 3,
+                _ => panic!("Wrong direction"),
+            }
+        } else {
+            result = match direction {
+                0 => 0,
+                1 => 1,
+                2 => 2,
+                _ => panic!("Wrong direction"),
+            }
+        }
+
+        result
+    }
+
     // Returns true if self lost head-to-head against other
     pub fn lost_headon(&self, other: &Battlesnake) -> bool {
         self.id != other.get_id()
@@ -149,12 +212,13 @@ impl Battlesnake {
 
 #[cfg(test)]
 mod tests {
+    use crate::constants::_TEST_PATH;
     use crate::load_object;
 
     // body_collision_with
     #[test]
     fn test_collision() {
-        let board = load_object!(Board, "body_collision-01-before");
+        let board = load_object!(Board, "body_collision-01-before", _TEST_PATH);
         let snake1 = &board.get_snakes()[0];
         let snake2 = &board.get_snakes()[1];
 
@@ -163,7 +227,7 @@ mod tests {
 
     #[test]
     fn test_no_collision() {
-        let board = load_object!(Board, "body_collision-01-before");
+        let board = load_object!(Board, "body_collision-01-before", _TEST_PATH);
         let snake1 = &board.get_snakes()[0];
         let snake2 = &board.get_snakes()[1];
 
@@ -173,8 +237,8 @@ mod tests {
     // eat_food
     #[test]
     fn test_eat_food() {
-        let mut before_board = load_object!(Board, "eat-01-before");
-        let after_board = load_object!(Board, "eat-01-after");
+        let mut before_board = load_object!(Board, "eat-01-before", _TEST_PATH);
+        let after_board = load_object!(Board, "eat-01-after", _TEST_PATH);
         let before_eat = &mut before_board.get_snakes_mut()[0];
         let after_eat = &after_board.get_snakes()[0];
 
@@ -186,7 +250,7 @@ mod tests {
     // lost_head_to_head
     #[test]
     fn test_lose_headon_collision() {
-        let board = load_object!(Board, "headon_collision-01-before");
+        let board = load_object!(Board, "headon_collision-01-before", _TEST_PATH);
         let snake1 = &board.get_snakes()[0];
         let snake2 = &board.get_snakes()[1];
 
@@ -195,7 +259,7 @@ mod tests {
 
     #[test]
     fn test_no_headon_collision() {
-        let board = load_object!(Board, "simple-02");
+        let board = load_object!(Board, "simple-02", _TEST_PATH);
         let snake1 = &board.get_snakes()[0];
         let snake2 = &board.get_snakes()[1];
 
@@ -204,7 +268,7 @@ mod tests {
 
     #[test]
     fn test_win_headon_collision() {
-        let board = load_object!(Board, "headon_collision-01-before");
+        let board = load_object!(Board, "headon_collision-01-before", _TEST_PATH);
         let snake1 = &board.get_snakes()[0];
         let snake2 = &board.get_snakes()[1];
 
@@ -214,8 +278,8 @@ mod tests {
     // move_to
     #[test]
     fn test_move_to() {
-        let mut before_board = load_object!(Board, "move-01-before");
-        let after_board = load_object!(Board, "move-01-after");
+        let mut before_board = load_object!(Board, "move-01-before", _TEST_PATH);
+        let after_board = load_object!(Board, "move-01-after", _TEST_PATH);
         let before_move = &mut before_board.get_snakes_mut()[0];
         let after_move = &after_board.get_snakes()[0];
 

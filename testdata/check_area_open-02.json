@@ -1,0 +1,205 @@
+{
+    "game": {
+        "id": "288278",
+        "ruleset": {
+            "name": "standard",
+            "version": "v.1.2.3",
+            "settings": {
+                "foodSpawnChance": 25,
+                "minimumFood": 1,
+                "hazardDamagePerTurn": 14,
+                "royale": {
+                  "shrinkEveryNTurns": 5
+                },
+                "squad": {
+                  "allowBodyCollisions": true,
+                  "sharedElimination": true,
+                  "sharedHealth": true,
+                  "sharedLength": true
+                }
+            }
+        },
+        "timeout": 500
+    },
+    "turn": 200,
+    "you": {
+        "health": 100,
+        "id": "you",
+        "name": "#22aa34",
+        "body": [
+            {
+                "x": 2,
+                "y": 3
+            },
+            {
+                "x": 3,
+                "y": 3
+            },
+            {
+                "x": 3,
+                "y": 2
+            },
+            {
+                "x": 3,
+                "y": 1
+            },
+            {
+                "x": 3,
+                "y": 0
+            },
+            {
+                "x": 2,
+                "y": 0
+            },
+            {
+                "x": 1,
+                "y": 0
+            },
+            {
+                "x": 0,
+                "y": 0
+            },
+            {
+                "x": 0,
+                "y": 1
+            },
+            {
+                "x": 0,
+                "y": 2
+            },
+            {
+                "x": 0,
+                "y": 3
+            },
+            {
+                "x": 0,
+                "y": 4
+            },
+            {
+                "x": 1,
+                "y": 4
+            },
+            {
+                "x": 2,
+                "y": 4
+            },
+            {
+                "x": 3,
+                "y": 4
+            },
+            {
+                "x": 4,
+                "y": 4
+            },
+            {
+                "x": 4,
+                "y": 3
+            },
+            {
+                "x": 4,
+                "y": 2
+            }
+        ],
+        "head": {
+            "x": 2,
+            "y": 3
+        },
+        "length": 18,
+        "latency": "222",
+        "shout": "Hi!"
+    },
+    "board": {
+        "food": [],
+        "hazards": [],
+        "height": 5,
+        "width": 5,
+        "snakes": [
+            {
+                "health": 100,
+                "id": "you",
+                "name": "#22aa34",
+                "body": [
+                    {
+                        "x": 2,
+                        "y": 3
+                    },
+                    {
+                        "x": 3,
+                        "y": 3
+                    },
+                    {
+                        "x": 3,
+                        "y": 2
+                    },
+                    {
+                        "x": 3,
+                        "y": 1
+                    },
+                    {
+                        "x": 3,
+                        "y": 0
+                    },
+                    {
+                        "x": 2,
+                        "y": 0
+                    },
+                    {
+                        "x": 1,
+                        "y": 0
+                    },
+                    {
+                        "x": 0,
+                        "y": 0
+                    },
+                    {
+                        "x": 0,
+                        "y": 1
+                    },
+                    {
+                        "x": 0,
+                        "y": 2
+                    },
+                    {
+                        "x": 0,
+                        "y": 3
+                    },
+                    {
+                        "x": 0,
+                        "y": 4
+                    },
+                    {
+                        "x": 1,
+                        "y": 4
+                    },
+                    {
+                        "x": 2,
+                        "y": 4
+                    },
+                    {
+                        "x": 3,
+                        "y": 4
+                    },
+                    {
+                        "x": 4,
+                        "y": 4
+                    },
+                    {
+                        "x": 4,
+                        "y": 3
+                    },
+                    {
+                        "x": 4,
+                        "y": 2
+                    }
+                ],
+                "head": {
+                    "x": 2,
+                    "y": 3
+                },
+                "length": 18,
+                "latency": "222",
+                "shout": "Hi!"
+            }
+        ]
+    }
+}
