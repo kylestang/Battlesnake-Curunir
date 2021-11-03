@@ -119,9 +119,10 @@ mod tests {
     // draw()
     #[test]
     fn test_draw() {
-        let board = load_object!(Board, "check_area_route-02", _TEST_PATH);
+        let filename = "check_area_closed-03";
+        let board = load_object!(Board, filename, _TEST_PATH);
 
-        let result = board.draw(String::from("check_area_route-02"));
+        let result = board.draw(String::from(filename));
 
         assert!(result.is_ok());
     }

@@ -40,12 +40,12 @@ impl Board {
                 if pos == *tile {
                     // If snake is me, subtract food from area. Return available area
                     if snake.get_id() == YOU_ID {
-                        if snake.get_length() - i > current_area as usize - food_eaten {
+                        if snake.get_length() - i - 1 > current_area as usize - food_eaten {
                             return current_area;
                         } else {
                             return max_area;
                         }
-                    } else if snake.get_length() - i >= current_area as usize {
+                    } else if snake.get_length() - i - 1 > current_area as usize {
                         return current_area;
                     } else {
                         return max_area;
@@ -58,7 +58,7 @@ impl Board {
         gone.push(pos);
 
         // Find the largest area from the current position
-        let mut largest_area = 0;
+        let mut largest_area = current_area;
         for tile in &pos.get_adjacent() {
             // Discard paths of alternate routes, keep paths used to get here
             gone.truncate(current_area as usize);
@@ -91,6 +91,36 @@ mod tests {
     }
 
     #[test]
+    fn test_longest_path_miss() {
+        let board = load_object!(Board, "check_area_closed-02", _TEST_PATH);
+        let pos = board.get_snakes()[0].get_head().get_down();
+
+        let result = board.longest_path(pos, 0, 10, &mut Vec::with_capacity(10), 0);
+
+        assert_eq!(result, 5);
+    }
+
+    #[test]
+    fn test_longest_path_hit() {
+        let board = load_object!(Board, "check_area_open-02", _TEST_PATH);
+        let pos = board.get_snakes()[0].get_head().get_down();
+
+        let result = board.longest_path(pos, 0, 10, &mut Vec::with_capacity(10), 0);
+
+        assert_eq!(result, 10);
+    }
+
+    #[test]
+    fn test_longest_path_food() {
+        let board = load_object!(Board, "check_area_closed-03", _TEST_PATH);
+        let pos = board.get_snakes()[0].get_head().get_down();
+
+        let result = board.longest_path(pos, 0, 10, &mut Vec::with_capacity(10), 0);
+
+        assert_eq!(result, 5);
+    }
+
+    #[test]
     fn test_longest_path_open() {
         let board = load_object!(Board, "check_area_open-01", _TEST_PATH);
         let pos = board.get_snakes()[0].get_head().get_up();
@@ -111,12 +141,22 @@ mod tests {
     }
 
     #[test]
-    fn test_longest_path_food() {
+    fn test_longest_path_real() {
         let board = load_object!(Board, "check_area_route-02", _TEST_PATH);
         let pos = board.get_snakes()[0].get_head().get_down();
 
         let result = board.longest_path(pos, 0, 27, &mut Vec::with_capacity(10), 0);
 
         assert_eq!(result, 27);
+    }
+
+    #[test]
+    fn test_longest_path_tail() {
+        let board = load_object!(Board, "check_area_route-03", _TEST_PATH);
+        let pos = board.get_snakes()[0].get_head().get_down();
+
+        let result = board.longest_path(pos, 0, 6, &mut Vec::with_capacity(6), 0);
+
+        assert_eq!(result, 6);
     }
 }
