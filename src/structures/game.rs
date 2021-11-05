@@ -145,16 +145,16 @@ impl Game {
         let _weak_snake_head = weak_snake_head.unwrap_or_default();
 
         // Check if positions contain food
-        let _food_down = board.get_food().contains(&down_pos);
-        let _food_up = board.get_food().contains(&up_pos);
-        let _food_right = board.get_food().contains(&right_pos);
-        let _food_left = board.get_food().contains(&left_pos);
+        let food_down = board.get_food().contains(&down_pos);
+        let food_up = board.get_food().contains(&up_pos);
+        let food_right = board.get_food().contains(&right_pos);
+        let food_left = board.get_food().contains(&left_pos);
 
         // Check if positions are against wall
-        let _against_wall_down = board.is_against_wall(down_pos);
-        let _against_wall_up = board.is_against_wall(up_pos);
-        let _against_wall_right = board.is_against_wall(right_pos);
-        let _against_wall_left = board.is_against_wall(left_pos);
+        let against_wall_down = board.is_against_wall(down_pos);
+        let against_wall_up = board.is_against_wall(up_pos);
+        let against_wall_right = board.is_against_wall(right_pos);
+        let against_wall_left = board.is_against_wall(left_pos);
 
         // Find best area controls
         let control_areas = board.calculate_areas(&self.ruleset);
@@ -268,148 +268,247 @@ impl Game {
             direction = String::from("left");
         }
         // Move towards kill
+        // I don't think these outcomes should ever happen
         else if down_survival && will_kill {
-            outcome = 0;
+            outcome = 4;
             direction = String::from("down");
         } else if up_survival && will_kill {
-            outcome = 1;
+            outcome = 5;
             direction = String::from("up");
         } else if right_survival && will_kill {
-            outcome = 2;
+            outcome = 6;
             direction = String::from("right");
         } else if left_survival && will_kill {
-            outcome = 3;
+            outcome = 7;
+            direction = String::from("left");
+        }
+        // Move towards largest area of control with best move avoiding walls
+        else if down_survival
+            && can_escape_down
+            && down_best
+            && down_control == max_control
+            && (!against_wall_down || food_down)
+        {
+            outcome = 8;
+            direction = String::from("down");
+        } else if up_survival
+            && can_escape_up
+            && up_best
+            && up_control == max_control
+            && (!against_wall_up || food_up)
+        {
+            outcome = 9;
+            direction = String::from("up");
+        } else if right_survival
+            && can_escape_right
+            && right_best
+            && right_control == max_control
+            && (!against_wall_right || food_right)
+        {
+            outcome = 10;
+            direction = String::from("right");
+        } else if left_survival
+            && can_escape_left
+            && left_best
+            && left_control == max_control
+            && (!against_wall_left || food_left)
+        {
+            outcome = 11;
             direction = String::from("left");
         }
         // Move towards largest area of control with best move
         else if down_survival && can_escape_down && down_best && down_control == max_control {
-            outcome = 4;
+            outcome = 12;
             direction = String::from("down");
         } else if up_survival && can_escape_up && up_best && up_control == max_control {
-            outcome = 5;
+            outcome = 13;
             direction = String::from("up");
         } else if right_survival && can_escape_right && right_best && right_control == max_control {
-            outcome = 6;
+            outcome = 14;
             direction = String::from("right");
         } else if left_survival && can_escape_left && left_best && left_control == max_control {
-            outcome = 7;
+            outcome = 15;
+            direction = String::from("left");
+        }
+        // Move towards escape with best move avoiding walls
+        else if down_survival && can_escape_down && down_best && (!against_wall_down || food_down)
+        {
+            outcome = 16;
+            direction = String::from("down");
+        } else if up_survival && can_escape_up && up_best && (!against_wall_up || food_up) {
+            outcome = 17;
+            direction = String::from("up");
+        } else if right_survival
+            && can_escape_right
+            && right_best
+            && (!against_wall_right || food_right)
+        {
+            outcome = 18;
+            direction = String::from("right");
+        } else if left_survival && can_escape_left && left_best && (!against_wall_left || food_left)
+        {
+            outcome = 19;
             direction = String::from("left");
         }
         // Move towards escape with best move
         else if down_survival && can_escape_down && down_best {
-            outcome = 8;
+            outcome = 20;
             direction = String::from("down");
         } else if up_survival && can_escape_up && up_best {
-            outcome = 9;
+            outcome = 21;
             direction = String::from("up");
         } else if right_survival && can_escape_right && right_best {
-            outcome = 10;
+            outcome = 22;
             direction = String::from("right");
         } else if left_survival && can_escape_left && left_best {
-            outcome = 11;
+            outcome = 23;
+            direction = String::from("left");
+        }
+        // Move towards escape with max control avoiding walls
+        else if down_survival
+            && can_escape_down
+            && down_control == max_control
+            && (!against_wall_down || food_down)
+        {
+            outcome = 24;
+            direction = String::from("down");
+        } else if up_survival
+            && can_escape_up
+            && up_control == max_control
+            && (!against_wall_up || food_up)
+        {
+            outcome = 25;
+            direction = String::from("up");
+        } else if right_survival
+            && can_escape_right
+            && right_control == max_control
+            && (!against_wall_right || food_right)
+        {
+            outcome = 26;
+            direction = String::from("right");
+        } else if left_survival
+            && can_escape_left
+            && left_control == max_control
+            && (!against_wall_left || food_left)
+        {
+            outcome = 27;
             direction = String::from("left");
         }
         // Move towards escape with max control
         else if down_survival && can_escape_down && down_control == max_control {
-            outcome = 12;
+            outcome = 28;
             direction = String::from("down");
         } else if up_survival && can_escape_up && up_control == max_control {
-            outcome = 13;
+            outcome = 29;
             direction = String::from("up");
         } else if right_survival && can_escape_right && right_control == max_control {
-            outcome = 14;
+            outcome = 30;
             direction = String::from("right");
         } else if left_survival && can_escape_left && left_control == max_control {
-            outcome = 15;
+            outcome = 31;
+            direction = String::from("left");
+        }
+        // Move towards escape avoiding walls
+        else if down_survival && can_escape_down && (!against_wall_down || food_down) {
+            outcome = 32;
+            direction = String::from("down");
+        } else if up_survival && can_escape_up && (!against_wall_up || food_up) {
+            outcome = 33;
+            direction = String::from("up");
+        } else if right_survival && can_escape_right && (!against_wall_right || food_right) {
+            outcome = 34;
+            direction = String::from("right");
+        } else if left_survival && can_escape_left && (!against_wall_left || food_left) {
+            outcome = 35;
             direction = String::from("left");
         }
         // Move towards escape
         else if down_survival && can_escape_down {
-            outcome = 16;
+            outcome = 36;
             direction = String::from("down");
         } else if up_survival && can_escape_up {
-            outcome = 17;
+            outcome = 37;
             direction = String::from("up");
         } else if right_survival && can_escape_right {
-            outcome = 18;
+            outcome = 38;
             direction = String::from("right");
         } else if left_survival && can_escape_left {
-            outcome = 19;
+            outcome = 39;
             direction = String::from("left");
         }
         // Move towards best move, can escape
         else if can_escape_down && down_best {
-            outcome = 20;
+            outcome = 40;
             direction = String::from("down");
         } else if can_escape_up && up_best {
-            outcome = 21;
+            outcome = 41;
             direction = String::from("up");
         } else if can_escape_right && right_best {
-            outcome = 22;
+            outcome = 42;
             direction = String::from("right");
         } else if can_escape_left && left_best {
-            outcome = 23;
+            outcome = 43;
             direction = String::from("left");
         }
         // Move towards largest control, can escape
         else if can_escape_down && down_control == max_control {
-            outcome = 24;
+            outcome = 44;
             direction = String::from("down");
         } else if can_escape_up && up_control == max_control {
-            outcome = 25;
+            outcome = 45;
             direction = String::from("up");
         } else if can_escape_right && right_control == max_control {
-            outcome = 26;
+            outcome = 46;
             direction = String::from("right");
         } else if can_escape_left && left_control == max_control {
-            outcome = 27;
+            outcome = 47;
             direction = String::from("left");
         }
         // Move towards escape
         else if can_escape_down {
-            outcome = 28;
+            outcome = 48;
             direction = String::from("down");
         } else if can_escape_up {
-            outcome = 29;
+            outcome = 49;
             direction = String::from("up");
         } else if can_escape_right {
-            outcome = 30;
+            outcome = 50;
             direction = String::from("right");
         } else if can_escape_left {
-            outcome = 31;
+            outcome = 51;
             direction = String::from("left");
         }
         // Go for best move with most turns, no survival
         else if down_best && down_area == max_area {
-            outcome = 32;
+            outcome = 52;
             direction = String::from("down");
         } else if up_best && up_area == max_area {
-            outcome = 33;
+            outcome = 53;
             direction = String::from("up");
         } else if right_best && right_area == max_area {
-            outcome = 34;
+            outcome = 54;
             direction = String::from("right");
         } else if left_best && left_area == max_area {
-            outcome = 35;
+            outcome = 55;
             direction = String::from("left")
         }
         // Go for most turns, no survival
         else if down_area == max_area {
-            outcome = 36;
+            outcome = 56;
             direction = String::from("down");
         } else if up_area == max_area {
-            outcome = 37;
+            outcome = 57;
             direction = String::from("up");
         } else if right_area == max_area {
-            outcome = 38;
+            outcome = 58;
             direction = String::from("right");
         } else if left_area == max_area {
-            outcome = 39;
+            outcome = 59;
             direction = String::from("left")
         }
         // Default
         else {
-            outcome = 40;
+            outcome = 60;
             direction = String::from("up");
         }
 
@@ -694,7 +793,11 @@ impl Game {
    up result: {}
 right result: {}
  left result: {}
-    max area: {}
+    max path: {}
+   down path: {}
+     up path: {}
+  right path: {}
+   left path: {}
    down area: {}
      up area: {}
   right area: {}
@@ -712,7 +815,11 @@ right result: {}
             down_area,
             up_area,
             right_area,
-            left_area
+            left_area,
+            down_control,
+            up_control,
+            right_control,
+            left_control
         ));
 
         // Return direction
