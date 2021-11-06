@@ -34,6 +34,9 @@ impl InputBoard {
 
         self.food.shrink_to_fit();
 
+        self.hazards.shrink_to_fit();
+        self.hazards.sort_unstable();
+
         // Return the Board object
         Board::new(
             self.height,

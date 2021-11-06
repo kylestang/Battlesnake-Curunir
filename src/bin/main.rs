@@ -24,11 +24,11 @@ async fn start() -> HttpResponse {
 async fn game_move(data: web::Json<MoveRequest>) -> HttpResponse {
     println!("Move");
     // Get data from MoveRequest
-    let (game, turn, input_board, you) = data.into_inner().into_values();
+    let (input_game, turn, input_board, you) = data.into_inner().into_values();
     // Create Board from InputBoard
     let board = input_board.into_board(you, turn);
     // Respond with direction
-    let direction = game.into_game().calculate_move(board);
+    let direction = input_game.into_game().calculate_move(board);
     HttpResponse::Ok().json(MoveResponse::new(direction, String::from("Hi!")))
 }
 

@@ -67,7 +67,7 @@ impl Board {
     }
 
     pub fn calculate_areas(&self, ruleset: &Ruleset) -> [i32; 4] {
-        let mut values = [Vec::new(), Vec::new(), Vec::new(), Vec::new()];
+        let mut areas = [Vec::new(), Vec::new(), Vec::new(), Vec::new()];
 
         let num_snakes = self.snakes.len();
         let iterations = DIRECTIONS.pow(num_snakes as u32);
@@ -89,14 +89,14 @@ impl Board {
 
             let area = new_board.area_controlled()[YOU_ID as usize];
 
-            values[direction].push(area);
+            areas[direction].push(area);
         }
 
         [
-            *values[0].iter().min().unwrap_or(&0),
-            *values[1].iter().min().unwrap_or(&0),
-            *values[2].iter().min().unwrap_or(&0),
-            *values[3].iter().min().unwrap_or(&0),
+            *areas[0].iter().min().unwrap_or(&0),
+            *areas[1].iter().min().unwrap_or(&0),
+            *areas[2].iter().min().unwrap_or(&0),
+            *areas[3].iter().min().unwrap_or(&0),
         ]
     }
 }
