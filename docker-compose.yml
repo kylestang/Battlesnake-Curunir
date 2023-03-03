@@ -1,0 +1,8 @@
+version: '3'
+
+services:
+  curunir:
+    build:
+      context: .
+    ports:
+      - "25571:8000"

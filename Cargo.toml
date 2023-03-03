@@ -2,7 +2,7 @@
 name = "curunir"
 version = "0.3.0"
 authors = ["Kyle Stang <kylestang.ks@gmail.com>"]
-edition = "2018"
+edition = "2021"
 license = "MIT"
 repository = "https://github.com/kylestang/battlesnake-curunir"
 
@@ -19,7 +19,9 @@ harness = false
 [dependencies]
 actix-web = "3"
 actix-rt = "2.3.0"
-criterion = "0.3"
 image = "0.23.14"
 serde = "1.0.130"
 serde_json = "1.0"
+
+[dev-dependencies]
+criterion = "0.3"
