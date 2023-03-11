@@ -179,9 +179,7 @@ impl Game {
         let mut best_boards = Vec::with_capacity(4);
         best_boards.push(&down_board);
 
-        let you_index = YOU_ID as usize;
-
-        match up_board[you_index].cmp(&best_boards[0][you_index]) {
+        match up_board.cmp(&best_boards[0]) {
             Ordering::Greater => {
                 best_boards.clear();
                 best_boards.push(&up_board);
@@ -190,7 +188,7 @@ impl Game {
             Ordering::Less => {}
         }
 
-        match right_board[you_index].cmp(&best_boards[0][you_index]) {
+        match right_board.cmp(&best_boards[0]) {
             Ordering::Greater => {
                 best_boards.clear();
                 best_boards.push(&right_board);
@@ -199,7 +197,7 @@ impl Game {
             Ordering::Less => {}
         }
 
-        match left_board[you_index].cmp(&best_boards[0][you_index]) {
+        match left_board.cmp(&best_boards[0]) {
             Ordering::Greater => {
                 best_boards.clear();
                 best_boards.push(&left_board);
@@ -215,13 +213,13 @@ impl Game {
         let left_best = best_boards.contains(&&left_board);
 
         // True if I can survive
-        let down_survival = down_board[you_index] > 0;
-        let up_survival = up_board[you_index] > 0;
-        let right_survival = right_board[you_index] > 0;
-        let left_survival = left_board[you_index] > 0;
+        let down_survival = down_board > 0;
+        let up_survival = up_board > 0;
+        let right_survival = right_board > 0;
+        let left_survival = left_board > 0;
 
         // True if other snakes will die
-        let will_kill = 100 - ((best_boards[0][you_index] / 1_000_000_000) % 100)
+        let will_kill = 100 - ((best_boards[0] / 1_000_000_000) % 100)
             < board.get_snakes().len() as u64;
 
         // Finish down_area thread
@@ -556,10 +554,10 @@ right result: {}
             outcome,
             will_kill,
             max_depth,
-            down_board[you_index],
-            up_board[you_index],
-            right_board[you_index],
-            left_board[you_index],
+            down_board,
+            up_board,
+            right_board,
+            left_board,
             max_search,
             down_area,
             up_area,
@@ -607,5 +605,17 @@ mod tests {
         let direction = game.calculate_move(board);
 
         assert_eq!(direction, String::from("left"));
+    }
+
+    #[test]
+    fn test_avoid_headon() {
+        let data = load_object!(MoveRequest, String::from("test_board-06"), _TEST_PATH);
+
+        let values = data.into_values();
+        let board = values.2.into_board(values.3, values.1);
+        let game = values.0.into_game();
+        let direction = game.calculate_move(board);
+
+        assert_eq!(direction, String::from("down"));
     }
 }

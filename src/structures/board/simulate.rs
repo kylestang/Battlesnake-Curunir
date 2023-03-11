@@ -4,7 +4,7 @@ use crate::ruleset::Ruleset;
 
 impl Board {
     // Moves self down and predicts future turns
-    pub fn check_down(mut self, ruleset: &Ruleset, current_level: i32, max_level: i32) -> Vec<u64> {
+    pub fn check_down(mut self, ruleset: &Ruleset, current_level: i32, max_level: i32) -> u64 {
         let snake = &mut self.snakes[YOU_ID as usize];
         let down = snake.get_down();
         snake.move_to(down);
@@ -12,7 +12,7 @@ impl Board {
     }
 
     // Moves self up and predicts future turns
-    pub fn check_up(mut self, ruleset: &Ruleset, current_level: i32, max_level: i32) -> Vec<u64> {
+    pub fn check_up(mut self, ruleset: &Ruleset, current_level: i32, max_level: i32) -> u64 {
         let snake = &mut self.snakes[YOU_ID as usize];
         let up = snake.get_up();
         snake.move_to(up);
@@ -25,7 +25,7 @@ impl Board {
         ruleset: &Ruleset,
         current_level: i32,
         max_level: i32,
-    ) -> Vec<u64> {
+    ) -> u64 {
         let snake = &mut self.snakes[YOU_ID as usize];
         let right = snake.get_right();
         snake.move_to(right);
@@ -33,7 +33,7 @@ impl Board {
     }
 
     // Moves self left and predicts future turns
-    pub fn check_left(mut self, ruleset: &Ruleset, current_level: i32, max_level: i32) -> Vec<u64> {
+    pub fn check_left(mut self, ruleset: &Ruleset, current_level: i32, max_level: i32) -> u64 {
         let snake = &mut self.snakes[YOU_ID as usize];
         let left = snake.get_left();
         snake.move_to(left);
@@ -41,14 +41,9 @@ impl Board {
     }
 
     // First level of recursion, my snake has already moved
-    fn recursion_entry(self, ruleset: &Ruleset, current_level: i32, max_level: i32) -> Vec<u64> {
+    fn recursion_entry(self, ruleset: &Ruleset, current_level: i32, max_level: i32) -> u64 {
         if DRAWING {
             self.draw(String::from("test")).unwrap();
-        }
-
-        // End case. Return if all snakes are dead or current_level >= max_level
-        if current_level >= max_level || self.snakes.is_empty() {
-            return self.evaluate();
         }
 
         let num_snakes = self.snakes.len();
@@ -104,28 +99,7 @@ impl Board {
             self.draw(String::from("test")).unwrap();
         }
 
-        // Find the index of the board to return
-        let mut return_board = 0;
-
-        // Iterate over the worst boards for each snake
-        for (i, snake_boards) in worst_boards.iter().enumerate() {
-            let mut best_direction = 0;
-            let id = self.snakes[i + 1].get_id() as usize;
-
-            // Find the best of the worst directions
-            for j in 1..DIRECTIONS {
-                if result_boards[snake_boards[j] as usize][id]
-                    > result_boards[snake_boards[best_direction] as usize][id]
-                {
-                    best_direction = j;
-                }
-            }
-
-            return_board += best_direction * DIRECTIONS.pow(i as u32);
-        }
-
-        // Return the best board
-        result_boards.swap_remove(return_board)
+        result_boards.iter().map(|board| board[0]).min().unwrap()
     }
 
     // Recursive minimax-ish to find score of position
