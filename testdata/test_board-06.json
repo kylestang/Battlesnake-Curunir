@@ -1,0 +1,131 @@
+{
+    "game": {
+        "id": "1ec9c09d-661f-45cf-9613-590fed872f3b",
+        "ruleset": {
+            "name": "standard",
+            "version": "v.1.2.3",
+            "settings": {
+                "foodSpawnChance": 25,
+                "minimumFood": 1,
+                "hazardDamagePerTurn": 14,
+                "royale": {
+                    "shrinkEveryNTurns": 5
+                },
+                "squad": {
+                    "allowBodyCollisions": true,
+                    "sharedElimination": true,
+                    "sharedHealth": true,
+                    "sharedLength": true
+                }
+            }
+        },
+        "timeout": 500
+    },
+    "turn": 0,
+    "board": {
+        "width": 11,
+        "height": 11,
+        "food": [
+            {
+                "x": 5,
+                "y": 5
+            }
+        ],
+        "hazards": [],
+        "snakes": [
+            {
+                "id": "gs_kbFtrCBb3wyfxy3qRvGQWrdc",
+                "name": "Nessegrev",
+                "body": [
+                    {
+                        "x": 6,
+                        "y": 5
+                    },
+                    {
+                        "x": 7,
+                        "y": 5
+                    },
+                    {
+                        "x": 8,
+                        "y": 5
+                    },
+                    {
+                        "x": 9,
+                        "y": 5
+                    }
+                ],
+                "health": 95,
+                "latency": "0",
+                "head": {
+                    "x": 6,
+                    "y": 5
+                },
+                "length": 4,
+                "shout": "",
+                "squad": ""
+            },
+            {
+                "id": "b",
+                "name": "other",
+                "body": [
+                    {
+                        "x": 5,
+                        "y": 6
+                    },
+                    {
+                        "x": 5,
+                        "y": 7
+                    },
+                    {
+                        "x": 5,
+                        "y": 8
+                    },
+                    {
+                        "x": 5,
+                        "y": 9
+                    }
+                ],
+                "health": 95,
+                "latency": "0",
+                "head": {
+                    "x": 5,
+                    "y": 6
+                },
+                "length": 4,
+                "shout": "",
+                "squad": ""
+            }
+        ]
+    },
+    "you": {
+        "id": "gs_kbFtrCBb3wyfxy3qRvGQWrdc",
+        "name": "Nessegrev",
+        "body": [
+            {
+                "x": 6,
+                "y": 5
+            },
+            {
+                "x": 7,
+                "y": 5
+            },
+            {
+                "x": 8,
+                "y": 5
+            },
+            {
+                "x": 9,
+                "y": 5
+            }
+        ],
+        "health": 95,
+        "latency": "0",
+        "head": {
+            "x": 6,
+            "y": 5
+        },
+        "length": 4,
+        "shout": "",
+        "squad": ""
+    }
+}

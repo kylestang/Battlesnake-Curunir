@@ -119,7 +119,7 @@ mod tests {
     // draw()
     #[test]
     fn test_draw() {
-        let filename = "check_area_closed-03";
+        let filename = "test_board-06";
         let board = load_object!(Board, filename, _TEST_PATH);
 
         let result = board.draw(String::from(filename));

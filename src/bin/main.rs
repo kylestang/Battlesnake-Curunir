@@ -7,20 +7,20 @@ use curunir::constants::*;
 use curunir::requests::*;
 
 // Index response
-#[get("/curunir")]
+#[get("/")]
 async fn index() -> HttpResponse {
     HttpResponse::Ok().json(IndexResponse::new(API_VERSION, AUTHOR, COLOR, HEAD, TAIL))
 }
 
 // Game start
-#[post("/curunir/start")]
+#[post("/start")]
 async fn start() -> HttpResponse {
     println!("Start");
     HttpResponse::Ok().body("")
 }
 
 // Game move response
-#[post("/curunir/move")]
+#[post("/move")]
 async fn game_move(data: web::Json<MoveRequest>) -> HttpResponse {
     println!("Move");
     // Get data from MoveRequest
@@ -33,7 +33,7 @@ async fn game_move(data: web::Json<MoveRequest>) -> HttpResponse {
 }
 
 // Game end
-#[post("/curunir/end")]
+#[post("/end")]
 async fn end() -> HttpResponse {
     println!("End");
     HttpResponse::Ok().body("")
@@ -65,7 +65,7 @@ mod tests {
     async fn test_index_get() {
         let mut app = test::init_service(App::new().service(index)).await;
         let req = test::TestRequest::with_header("content-type", "text/plain")
-            .uri("/curunir")
+            .uri("/")
             .to_request();
         let resp = test::call_service(&mut app, req).await;
         println!("{}", resp.status());
@@ -79,7 +79,7 @@ mod tests {
         let mut app = test::init_service(App::new().service(game_move)).await;
         let req = test::TestRequest::post()
             .set_json(&data)
-            .uri("/curunir/move")
+            .uri("/move")
             .to_request();
         println!("{}", req.path());
         let resp = test::call_service(&mut app, req).await;

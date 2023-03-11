@@ -6,3 +6,5 @@ services:
       context: .
     ports:
       - "25571:8000"
+    volumes:
+      - "./logs:/app/logs:rw"
