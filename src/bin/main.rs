@@ -22,7 +22,9 @@ async fn start() -> HttpResponse {
 // Game move response
 #[post("/move")]
 async fn game_move(data: web::Json<MoveRequest>) -> HttpResponse {
-    println!("Move");
+    if LOG_LEVEL >= 1 {
+        println!("Move");
+    }
     // Get data from MoveRequest
     let (input_game, turn, input_board, you) = data.into_inner().into_values();
     // Create Board from InputBoard
