@@ -6,7 +6,7 @@ use std::sync::mpsc;
 use std::thread::spawn;
 
 use crate::board::Board;
-use crate::constants::{EXPONENT, LENGTH_ADVANTAGE, LOGGING, LOG_PATH, MAX_SEARCH, YOU_ID};
+use crate::constants::{EXPONENT, LENGTH_ADVANTAGE, LOG_LEVEL, LOG_PATH, MAX_SEARCH, YOU_ID};
 use crate::ruleset::Ruleset;
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -576,8 +576,11 @@ right result: {}
     // Prints data to stdout and writes to log file
     pub fn log_data(&self, data: String) {
         let data = data + "\n\n";
-        print!("{}", data);
-        if LOGGING {
+        if LOG_LEVEL >= 1 {
+            print!("{}", data);
+        }
+        
+        if LOG_LEVEL >= 2 {
             let mut file: File = OpenOptions::new()
                 .append(true)
                 .create(true)

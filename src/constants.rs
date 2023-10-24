@@ -14,7 +14,7 @@ pub const MAX_SEARCH: i32 = 30;
 pub const YOU_ID: u8 = 0;
 
 // Log settings
-pub const LOGGING: bool = false;
+pub const LOG_LEVEL: u32 = 0;
 pub const LOG_PATH: &str = "logs/";
 pub const _TEST_PATH: &str = "testdata/";
 

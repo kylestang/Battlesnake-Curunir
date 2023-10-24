@@ -1,4 +1,4 @@
-FROM rust:slim
+FROM rust:slim AS builder
 
 RUN mkdir /app
 
@@ -12,4 +12,8 @@ ENV RUSTFLAGS="-C target-cpu=native"
 
 RUN [ "cargo", "build", "--release" ]
 
-CMD [ "cargo", "run", "--release" ]
+FROM debian:stable-slim
+
+COPY --from=builder /app/target/release/main ./main
+
+CMD ./main
